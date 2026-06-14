@@ -106,16 +106,16 @@ group by b.season_id, b.player_id, b.faction;
 create or replace function public.rank_title(vp bigint)
 returns text language sql immutable as $$
   select case
-    when vp >= 10000 then 'Primarch'
+    when vp >= 13000 then 'Primarch'
     when vp >= 9000  then 'Master of the Legion'
-    when vp >= 7200  then 'Praetor'
-    when vp >= 5600  then 'Lord Commander'
-    when vp >= 4200  then 'Captain'
-    when vp >= 3000  then 'Centurion'
-    when vp >= 2000  then 'Sergeant'
-    when vp >= 1200  then 'Veteran'
-    when vp >= 600   then 'Legionary'
-    when vp >= 200   then 'Neophyte'
+    when vp >= 6200  then 'Praetor'
+    when vp >= 4300  then 'Lord Commander'
+    when vp >= 2900  then 'Captain'
+    when vp >= 1900  then 'Centurion'
+    when vp >= 1200  then 'Sergeant'
+    when vp >= 750   then 'Veteran'
+    when vp >= 410   then 'Legionary'
+    when vp >= 170   then 'Neophyte'
     else 'Aspirant'
   end;
 $$;

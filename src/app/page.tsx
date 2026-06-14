@@ -107,6 +107,8 @@ export default async function Home() {
         )}
         <p style={{ marginTop: 16 }}>
           <Link href="/ledger">→ Search the full public ledger</Link>
+          {" · "}
+          <Link href="/leaderboard">🏆 Leaderboard</Link>
           {profile?.is_admin && <> · <Link href="/admin">⚙ Admin</Link></>}
         </p>
       </section>

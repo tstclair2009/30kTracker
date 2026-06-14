@@ -21,7 +21,10 @@ export default async function ProfilePage({ params }: { params: { handle: string
 
   return (
     <main className="wrap">
-      <p><Link href="/ledger">← Back to the ledger</Link></p>
+      <p style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <Link href="/ledger">← Back to the ledger</Link>
+        <Link href="/leaderboard">🏆 View the leaderboard</Link>
+      </p>
 
       <section className="panel">
         <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>

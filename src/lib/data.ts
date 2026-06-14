@@ -73,6 +73,92 @@ export async function getStandings(limit = 50, offset = 0) {
   return data ?? [];
 }
 
+export type LeaderRow = {
+  handle: string;
+  vp: number;
+  battles: number;
+  topFaction: string | null;
+  loyalistVP: number;
+  traitorVP: number;
+};
+
+// Leaderboard for the open season, ranked by total VP, with optional filters.
+// - No filter: uses the standings view (fast), enriched with each player's top faction.
+// - faction/side filter: re-aggregates from battles so VP reflects only the
+//   matching subset, then re-ranks.
+export async function getLeaderboard(opts: {
+  faction?: string;
+  side?: "loyalist" | "traitor";
+} = {}): Promise<LeaderRow[]> {
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).single();
+  if (!season) return [];
+
+  const { faction, side } = opts;
+  const filtered = Boolean(faction || side);
+
+  if (!filtered) {
+    // unfiltered: standings view + each player's dominant faction
+    const { data: standings } = await supabase
+      .from("v_player_standings")
+      .select("player_id, handle, vp, battles, loyalist_vp, traitor_vp")
+      .eq("season_id", season.id)
+      .order("vp", { ascending: false })
+      .limit(200);
+
+    const rows = standings ?? [];
+    // top faction per player (one query, then reduce)
+    const ids = rows.map((r: any) => r.player_id);
+    const topByPlayer: Record<string, { faction: string; vp: number }> = {};
+    if (ids.length) {
+      const { data: facs } = await supabase
+        .from("v_player_factions")
+        .select("player_id, faction, vp")
+        .eq("season_id", season.id)
+        .in("player_id", ids)
+        .order("vp", { ascending: false });
+      for (const f of facs ?? []) {
+        const cur = topByPlayer[(f as any).player_id];
+        if (!cur || Number((f as any).vp) > cur.vp) {
+          topByPlayer[(f as any).player_id] = { faction: (f as any).faction, vp: Number((f as any).vp) };
+        }
+      }
+    }
+    return rows.map((r: any) => ({
+      handle: r.handle,
+      vp: Number(r.vp),
+      battles: Number(r.battles),
+      topFaction: topByPlayer[r.player_id]?.faction ?? null,
+      loyalistVP: Number(r.loyalist_vp ?? 0),
+      traitorVP: Number(r.traitor_vp ?? 0),
+    }));
+  }
+
+  // filtered: aggregate battles matching the filter, per player
+  let q = supabase
+    .from("battles")
+    .select("score, side, faction, profiles(handle)")
+    .eq("season_id", season.id);
+  if (faction) q = q.eq("faction", faction);
+  if (side) q = q.eq("side", side);
+
+  const { data: battles } = await q.limit(5000);
+
+  const agg: Record<string, LeaderRow> = {};
+  for (const b of battles ?? []) {
+    const handle = (b as any).profiles?.handle ?? "unknown";
+    const row = agg[handle] || { handle, vp: 0, battles: 0, topFaction: faction ?? null, loyalistVP: 0, traitorVP: 0 };
+    const sc = Number((b as any).score);
+    row.vp += sc;
+    row.battles += 1;
+    if ((b as any).side === "loyalist") row.loyalistVP += sc; else row.traitorVP += sc;
+    if (!faction) row.topFaction = (b as any).faction; // last seen; fine for side-only filter
+    agg[handle] = row;
+  }
+  return Object.values(agg).sort((a, b) => b.vp - a.vp);
+}
+
 // A single player's full profile within the open season.
 export async function getPlayerProfile(handle: string) {
   const supabase = createClient();
