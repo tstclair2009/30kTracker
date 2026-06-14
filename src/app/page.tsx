@@ -25,10 +25,14 @@ export default async function Home() {
   // logged-in player's own record for the mini card (null until they've fought)
   const myRecord = profile ? await getPlayerProfile(profile.handle) : null;
 
-  const loyal = balance.loyalist_vp;
-  const traitor = balance.traitor_vp;
+  const loyal = Number(balance.loyalist_vp) || 0;
+  const traitor = Number(balance.traitor_vp) || 0;
   const diff = loyal - traitor;
-  const marker = 50 + 50 * (diff / (Math.abs(diff) + 150)); // compressed, never pinned
+  const total = loyal + traitor;
+  // Marker = loyalist share of total VP, eased off the extremes so it never
+  // fully pins to an edge. Tracks intuitively at any score magnitude.
+  const share = total > 0 ? loyal / total : 0.5;
+  const marker = total > 0 ? 6 + share * 88 : 50; // 6%..94%, centered when empty
 
   return (
     <main className="wrap">
@@ -47,7 +51,7 @@ export default async function Home() {
           <span style={{ color: "var(--crimson)" }}>{traitor.toLocaleString()} VP TRAITOR</span>
         </div>
         <div style={{ position: "relative", height: 10, background: "var(--void)", border: "1px solid var(--panel-edge)", borderRadius: 2 }}>
-          <div style={{ position: "absolute", left: `calc(${marker}% - 2px)`, top: -3, width: 4, height: 16, background: "var(--bone)" }} />
+          <div style={{ position: "absolute", left: `calc(${marker}% - 2px)`, top: -3, width: 4, height: 16, background: "var(--bone)", boxShadow: "0 0 6px rgba(232,226,208,0.6)", transition: "left 0.8s cubic-bezier(0.2,0.8,0.2,1)" }} />
         </div>
         <p style={{ textAlign: "center", fontSize: 11, color: "var(--bone-dim)", marginTop: 10 }}>
           {diff === 0 ? "THE WAR HANGS IN BALANCE" : diff > 0 ? "THE WAR FAVORS THE LOYALISTS" : "THE WAR FAVORS THE TRAITORS"}
