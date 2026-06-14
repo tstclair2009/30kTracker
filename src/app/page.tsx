@@ -2,6 +2,7 @@ import { getWarBalance, getRecentBattles, getCurrentProfile } from "@/lib/data";
 import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
+import EditHandle from "@/components/EditHandle";
 import Link from "next/link";
 
 function timeAgo(ts: string) {
@@ -50,12 +51,13 @@ export default async function Home() {
       {/* auth or submit */}
       {profile ? (
         <>
-          <section className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <section className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
             <div>
               <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>SIGNED IN AS</div>
               <Link href={`/profile/${profile.handle}`} style={{ fontSize: 18, fontFamily: "Cinzel, serif" }}>
                 {profile.handle}
               </Link>
+              <EditHandle current={profile.handle} />
             </div>
             <form action={signOut}>
               <button className="btn-ghost" type="submit">SIGN OUT</button>

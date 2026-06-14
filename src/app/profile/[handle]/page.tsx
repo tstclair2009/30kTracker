@@ -1,13 +1,18 @@
-import { getPlayerProfile } from "@/lib/data";
+import { getPlayerProfile, getCurrentProfile } from "@/lib/data";
 import { rankFor } from "@/lib/ranks";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import EditHandle from "@/components/EditHandle";
 
 export default async function ProfilePage({ params }: { params: { handle: string } }) {
-  const data = await getPlayerProfile(params.handle);
+  const [data, me] = await Promise.all([
+    getPlayerProfile(params.handle),
+    getCurrentProfile(),
+  ]);
   if (!data) notFound();
 
   const { standing, factions, recent } = data;
+  const isOwnProfile = me?.handle === standing.handle;
   const vp = Number(standing.vp);
   const rank = rankFor(vp);
   const topFaction = factions[0]?.vp ?? 1;
@@ -24,6 +29,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
           {rank.title}
         </div>
         <div style={{ fontSize: 12, color: "var(--bone-dim)" }}>{standing.handle}</div>
+        {isOwnProfile && <EditHandle current={standing.handle} />}
 
         {/* rank progress */}
         <div style={{ marginTop: 18 }}>
