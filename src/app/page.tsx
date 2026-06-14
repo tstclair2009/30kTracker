@@ -1,8 +1,10 @@
-import { getWarBalance, getRecentBattles, getCurrentProfile } from "@/lib/data";
+import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile } from "@/lib/data";
 import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
 import EditHandle from "@/components/EditHandle";
+import SpaceBattle from "@/components/SpaceBattle";
+import MiniProfileCard from "@/components/MiniProfileCard";
 import Link from "next/link";
 
 function timeAgo(ts: string) {
@@ -20,6 +22,9 @@ export default async function Home() {
     getCurrentProfile(),
   ]);
 
+  // logged-in player's own record for the mini card (null until they've fought)
+  const myRecord = profile ? await getPlayerProfile(profile.handle) : null;
+
   const loyal = balance.loyalist_vp;
   const traitor = balance.traitor_vp;
   const diff = loyal - traitor;
@@ -27,6 +32,7 @@ export default async function Home() {
 
   return (
     <main className="wrap">
+      <SpaceBattle balance={loyal - traitor} />
       <header style={{ textAlign: "center", marginBottom: 8 }}>
         <h1 style={{ fontSize: 30, color: "var(--bone)", margin: 0 }}>THE GALACTIC WAR</h1>
         <p style={{ fontSize: 11, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>
@@ -63,6 +69,9 @@ export default async function Home() {
               <button className="btn-ghost" type="submit">SIGN OUT</button>
             </form>
           </section>
+          {myRecord && (
+            <MiniProfileCard standing={myRecord.standing} factions={myRecord.factions} />
+          )}
           <SubmitForm />
         </>
       ) : (

@@ -13,12 +13,19 @@
 
 * { box-sizing: border-box; }
 
+html {
+  background: var(--void);
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--void);
   color: var(--bone);
   font-family: "IBM Plex Mono", monospace;
+}
+
+body {
+  background: transparent;
 }
 
 a { color: var(--gold); text-decoration: none; }
@@ -31,7 +38,8 @@ a:hover { text-decoration: underline dotted; }
 }
 
 .panel {
-  background: rgba(17, 18, 26, 0.82);
+  background: rgba(17, 18, 26, 0.9);
+  backdrop-filter: blur(2px);
   border: 1px solid var(--panel-edge);
   border-radius: 3px;
   padding: 24px;

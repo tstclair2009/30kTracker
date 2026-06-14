@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import { submitBattle } from "@/app/actions";
-
-const FACTIONS = [
-  "Dark Angels","Emperor's Children","Iron Warriors","White Scars","Space Wolves",
-  "Imperial Fists","Night Lords","Blood Angels","Iron Hands","World Eaters",
-  "Ultramarines","Death Guard","Thousand Sons","Sons of Horus","Word Bearers",
-  "Salamanders","Raven Guard","Alpha Legion","Legio Custodes","Sisters of Silence",
-  "Mechanicum","Solar Auxilia","Imperialis Militia","Questoris Knights","Blackshields",
-  "Daemons of the Ruinstorm","Talons of the Emperor",
-];
+import { FACTIONS } from "@/lib/factions";
 
 export default function SubmitForm() {
   const [side, setSide] = useState("");
@@ -43,7 +35,7 @@ export default function SubmitForm() {
             <label className="label">Faction</label>
             <select className="input" name="faction" defaultValue="">
               <option value="">— declare your Legion —</option>
-              {FACTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+              {FACTIONS.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
             </select>
           </div>
           <div>

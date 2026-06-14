@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
+import { sideForFaction } from "@/lib/factions";
 
 export type Battle = {
   id: number;
@@ -94,6 +95,11 @@ export async function getPlayerProfile(handle: string) {
     .eq("player_id", standing.player_id)
     .order("vp", { ascending: false });
 
+  const factionsWithSide = (factions ?? []).map((f: any) => ({
+    ...f,
+    side: sideForFaction(f.faction),
+  }));
+
   const { data: recent } = await supabase
     .from("battles")
     .select("id, faction, side, score, event, created_at")
@@ -102,7 +108,7 @@ export async function getPlayerProfile(handle: string) {
     .order("created_at", { ascending: false })
     .limit(8);
 
-  return { standing, factions: factions ?? [], recent: recent ?? [] };
+  return { standing, factions: factionsWithSide, recent: recent ?? [] };
 }
 
 // Search the ledger (handle / event / faction) via the SQL RPC.
