@@ -3,6 +3,8 @@ import { rankFor } from "@/lib/ranks";
 import LedgerSearch from "@/components/LedgerSearch";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function LedgerPage() {
   const standings = await getStandings(100);
 

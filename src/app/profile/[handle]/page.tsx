@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import EditHandle from "@/components/EditHandle";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProfilePage({ params }: { params: { handle: string } }) {
   const [data, me] = await Promise.all([
     getPlayerProfile(params.handle),
@@ -28,8 +30,10 @@ export default async function ProfilePage({ params }: { params: { handle: string
         <div style={{ fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: 26, color: "var(--bone)" }}>
           {rank.title}
         </div>
-        <div style={{ fontSize: 12, color: "var(--bone-dim)" }}>{standing.handle}</div>
-        {isOwnProfile && <EditHandle current={standing.handle} />}
+        <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: "var(--bone-dim)" }}>{standing.handle}</span>
+          {isOwnProfile && <EditHandle current={standing.handle} />}
+        </div>
 
         {/* rank progress */}
         <div style={{ marginTop: 18 }}>

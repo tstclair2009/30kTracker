@@ -86,7 +86,30 @@ export async function getPlayerProfile(handle: string) {
     .eq("season_id", season.id)
     .eq("handle", handle)
     .maybeSingle();
-  if (!standing) return null;
+
+  // No standing row means no battles this season. If the handle still belongs to
+  // a real account, return a zero-stats profile instead of 404ing — so a brand-new
+  // user (or someone who just renamed) can still view their profile.
+  if (!standing) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("id, handle")
+      .eq("handle", handle)
+      .maybeSingle();
+    if (!prof) return null; // truly no such handle
+    return {
+      standing: {
+        player_id: prof.id,
+        handle: prof.handle,
+        vp: 0,
+        battles: 0,
+        loyalist_vp: 0,
+        traitor_vp: 0,
+      },
+      factions: [],
+      recent: [],
+    };
+  }
 
   const { data: factions } = await supabase
     .from("v_player_factions")

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import AdminPanels from "@/components/AdminPanels";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const profile = await getCurrentProfile();
   // server-side gate — non-admins never receive the page

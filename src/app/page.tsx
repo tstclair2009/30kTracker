@@ -7,6 +7,8 @@ import SpaceBattle from "@/components/SpaceBattle";
 import MiniProfileCard from "@/components/MiniProfileCard";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 function timeAgo(ts: string) {
   const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
   if (s < 60) return "moments ago";
@@ -31,8 +33,11 @@ export default async function Home() {
   const total = loyal + traitor;
   // Marker = loyalist share of total VP, eased off the extremes so it never
   // fully pins to an edge. Tracks intuitively at any score magnitude.
-  const share = total > 0 ? loyal / total : 0.5;
-  const marker = total > 0 ? 6 + share * 88 : 50; // 6%..94%, centered when empty
+  // LOYALIST label is on the left, TRAITOR on the right. The marker should move
+  // TOWARD the winning side, so a loyalist lead pulls it left. Position by
+  // traitor share: high traitor share -> marker right, high loyalist share -> left.
+  const traitorShare = total > 0 ? traitor / total : 0.5;
+  const marker = total > 0 ? 6 + traitorShare * 88 : 50; // 6%..94%, centered when empty
 
   return (
     <main className="wrap">
