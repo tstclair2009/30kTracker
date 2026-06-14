@@ -128,6 +128,22 @@ alter table public.profiles enable row level security;
 alter table public.seasons  enable row level security;
 alter table public.battles  enable row level security;
 
+-- Admin check via SECURITY DEFINER so policies on `profiles` never read
+-- `profiles` again inside their own USING clause (that causes infinite
+-- recursion and breaks every profile read).
+create or replace function public.is_admin(uid uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (select p.is_admin from public.profiles p where p.id = uid),
+    false
+  );
+$$;
+
 -- PROFILES: everyone can read handles (public ledger), but not emails.
 -- We expose a public view without email and lock the base table down.
 create or replace view public.v_public_profiles as
@@ -137,7 +153,7 @@ create or replace view public.v_public_profiles as
 create policy profiles_self_read on public.profiles
   for select using (
     auth.uid() = id
-    or exists (select 1 from public.profiles me where me.id = auth.uid() and me.is_admin)
+    or public.is_admin(auth.uid())
   );
 
 -- a player can insert/update only their own profile
@@ -149,9 +165,7 @@ create policy profiles_self_update on public.profiles
 -- SEASONS: world-readable; only admins may create/close.
 create policy seasons_read on public.seasons for select using (true);
 create policy seasons_admin_write on public.seasons
-  for all using (
-    exists (select 1 from public.profiles me where me.id = auth.uid() and me.is_admin)
-  );
+  for all using (public.is_admin(auth.uid()));
 
 -- BATTLES: world-readable (public ledger).
 create policy battles_read on public.battles for select using (true);
@@ -165,13 +179,9 @@ create policy battles_self_insert on public.battles
 
 -- players may not edit/delete history; admins can (for moderation).
 create policy battles_admin_modify on public.battles
-  for update using (
-    exists (select 1 from public.profiles me where me.id = auth.uid() and me.is_admin)
-  );
+  for update using (public.is_admin(auth.uid()));
 create policy battles_admin_delete on public.battles
-  for delete using (
-    exists (select 1 from public.profiles me where me.id = auth.uid() and me.is_admin)
-  );
+  for delete using (public.is_admin(auth.uid()));
 
 -- ---------------------------------------------------------------------------
 -- AUTO-PROFILE: when a new auth user appears, seed a profile row.

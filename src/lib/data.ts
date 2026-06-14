@@ -112,15 +112,29 @@ export async function searchLedger(q: string) {
   return (data ?? []) as Battle[];
 }
 
-// Is the current user an admin?
+// Is the current user signed in, and what's their profile?
+// Falls back to session-derived data if the profile row isn't readable yet,
+// so a transient profile-read issue never makes a signed-in user look logged out.
 export async function getCurrentProfile() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, handle, email, is_admin")
     .eq("id", user.id)
-    .single();
-  return data;
+    .maybeSingle();
+
+  if (data) return data;
+
+  // Signed in but no readable profile row. Surface it in logs, but keep the
+  // user logged in using what we know from the session.
+  if (error) console.error("getCurrentProfile: profile read failed:", error.message);
+  return {
+    id: user.id,
+    handle: (user.email?.split("@")[0] ?? "soldier").toLowerCase(),
+    email: user.email ?? null,
+    is_admin: false,
+  };
 }
