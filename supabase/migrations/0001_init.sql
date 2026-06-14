@@ -188,14 +188,18 @@ create policy battles_admin_delete on public.battles
 -- Handle defaults to a slug of their email local-part; they can change it once.
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer as $$
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   base_handle text;
   final_handle text;
   suffix int := 0;
 begin
-  base_handle := lower(regexp_replace(split_part(new.email, '@', 1), '[^a-z0-9._-]', '', 'g'));
-  if length(base_handle) < 3 then base_handle := 'soldier'; end if;
+  base_handle := lower(regexp_replace(split_part(coalesce(new.email, ''), '@', 1), '[^a-z0-9._-]', '', 'g'));
+  if base_handle is null or length(base_handle) < 3 then base_handle := 'soldier'; end if;
   base_handle := left(base_handle, 24);
   final_handle := base_handle;
   while exists (select 1 from public.profiles where handle = final_handle) loop
@@ -204,7 +208,11 @@ begin
   end loop;
 
   insert into public.profiles (id, handle, email)
-  values (new.id, final_handle, new.email);
+  values (new.id, final_handle, new.email)
+  on conflict (id) do nothing;
+  return new;
+exception when others then
+  raise warning 'handle_new_user failed for %: %', new.id, sqlerrm;
   return new;
 end;
 $$;
