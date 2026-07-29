@@ -1,4 +1,4 @@
-import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile } from "@/lib/data";
+import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile, getActiveWarzone, getWarzoneHistory, getSubmittableEvents } from "@/lib/data";
 import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
@@ -18,11 +18,14 @@ function timeAgo(ts: string) {
 }
 
 export default async function Home() {
-  const [balance, recent, profile] = await Promise.all([
+  const [balance, recent, profile, warzone, warzoneHistory] = await Promise.all([
     getWarBalance(),
     getRecentBattles(20),
     getCurrentProfile(),
+    getActiveWarzone(),
+    getWarzoneHistory(),
   ]);
+  const submittableEvents = await getSubmittableEvents(profile?.id ?? null);
 
   // logged-in player's own record for the mini card (null until they've fought)
   const myRecord = profile ? await getPlayerProfile(profile.handle) : null;
@@ -42,37 +45,112 @@ export default async function Home() {
   return (
     <main className="wrap">
       <SpaceBattle balance={loyal - traitor} />
-      <header style={{ textAlign: "center", marginBottom: 8 }}>
-        <h1 style={{ fontSize: 30, color: "var(--bone)", margin: 0 }}>THE GALACTIC WAR</h1>
-        <p style={{ fontSize: 11, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>
-          {balance.season ? `WAR OF ${balance.season.label}` : "NO ACTIVE WAR"}
+
+      {/* ——— title card ——— */}
+      <header className="rise" style={{ textAlign: "center", marginBottom: 12, marginTop: 26 }}>
+        <div className="eyebrow eyebrow-gold" style={{ marginBottom: 12 }}>
+          {balance.season ? `✦ THE WAR OF ${balance.season.label} ✦` : "✦ NO ACTIVE WAR ✦"}
+        </div>
+        <h1 className="display-xl" style={{ fontSize: "clamp(34px, 7vw, 58px)" }}>
+          THE GALACTIC WAR
+        </h1>
+        <p className="prose" style={{ maxWidth: 460, margin: "10px auto 0", fontStyle: "italic" }}>
+          Every battle recorded here tilts the fate of the galaxy.
         </p>
       </header>
 
-      {/* warfront balance */}
-      <section className="panel">
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
-          <span style={{ color: "var(--gold)" }}>{loyal.toLocaleString()} VP LOYALIST</span>
-          <span style={{ color: "var(--crimson)" }}>{traitor.toLocaleString()} VP TRAITOR</span>
+      {/* ——— warfront gauge (signature) ——— */}
+      <section className="panel rise-2" style={{ marginTop: 28, padding: "32px 30px 26px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, gap: 12 }}>
+          <div>
+            <div className="eyebrow eyebrow-gold">LOYALIST</div>
+            <div className="war-num" style={{ color: "var(--gold-bright)" }}>{loyal.toLocaleString()}</div>
+          </div>
+          <div className="eyebrow" style={{ paddingBottom: 8 }}>VICTORY POINTS</div>
+          <div style={{ textAlign: "right" }}>
+            <div className="eyebrow eyebrow-crimson">TRAITOR</div>
+            <div className="war-num" style={{ color: "var(--crimson-bright)" }}>{traitor.toLocaleString()}</div>
+          </div>
         </div>
-        <div style={{ position: "relative", height: 10, background: "var(--void)", border: "1px solid var(--panel-edge)", borderRadius: 2 }}>
-          <div style={{ position: "absolute", left: `calc(${marker}% - 2px)`, top: -3, width: 4, height: 16, background: "var(--bone)", boxShadow: "0 0 6px rgba(232,226,208,0.6)", transition: "left 0.8s cubic-bezier(0.2,0.8,0.2,1)" }} />
+
+        <div className="gauge-shell">
+          <div className="gauge-glow-l" style={{ opacity: 0.35 + Math.max(0, 0.5 - traitorShare) * 1.3 }} />
+          <div className="gauge-glow-r" style={{ opacity: 0.35 + Math.max(0, traitorShare - 0.5) * 1.3 }} />
+          <div className="gauge-ticks" />
+          <div className="gauge-center" />
+          <div className="gauge-blade" style={{ left: `calc(${marker}% - 1.5px)` }} />
         </div>
-        <p style={{ textAlign: "center", fontSize: 11, color: "var(--bone-dim)", marginTop: 10 }}>
+
+        <p className="eyebrow" style={{ textAlign: "center", marginTop: 14, letterSpacing: "0.4em" }}>
           {diff === 0 ? "THE WAR HANGS IN BALANCE" : diff > 0 ? "THE WAR FAVORS THE LOYALISTS" : "THE WAR FAVORS THE TRAITORS"}
         </p>
       </section>
 
-      {/* auth or submit */}
+      {/* ——— current warzone: the chapter of the war ——— */}
+      {warzone && (
+        <section className="panel" style={{ marginTop: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 320px" }}>
+              <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>
+                CHAPTER {warzone.sequence} · ACTIVE WARZONE
+              </div>
+              <h2 className="display-xl" style={{ fontSize: "clamp(22px, 4vw, 32px)" }}>
+                THE BATTLE FOR {warzone.name.toUpperCase()}
+              </h2>
+              {warzone.narrative && (
+                <p className="prose" style={{ fontStyle: "italic", marginTop: 8, marginBottom: 0 }}>
+                  {warzone.narrative}
+                </p>
+              )}
+            </div>
+            <div className="data" style={{ textAlign: "right", minWidth: 150 }}>
+              <div style={{ fontSize: 20, color: "var(--gold-bright)" }}>{warzone.loyalist_vp.toLocaleString()} <span style={{ fontSize: 10, color: "var(--bone-dim)" }}>LOYALIST</span></div>
+              <div style={{ fontSize: 20, color: "var(--crimson-bright)" }}>{warzone.traitor_vp.toLocaleString()} <span style={{ fontSize: 10, color: "var(--bone-dim)" }}>TRAITOR</span></div>
+              <div style={{ fontSize: 10, color: "var(--neutral)", marginTop: 6, letterSpacing: "0.15em" }}>
+                {warzone.battle_count} GAME{warzone.battle_count === 1 ? "" : "S"} REPORTED
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ——— the war so far: concluded chapters ——— */}
+      {warzoneHistory.filter((z) => z.status === "concluded").length > 0 && (
+        <section style={{ marginTop: 34 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>THE WAR SO FAR</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {warzoneHistory.filter((z) => z.status === "concluded").map((z) => {
+              const lWin = z.loyalist_vp > z.traitor_vp;
+              const even = z.loyalist_vp === z.traitor_vp;
+              const c = even ? "var(--bone-dim)" : lWin ? "var(--gold-bright)" : "var(--crimson-bright)";
+              return (
+                <div key={z.warzone_id} className="data" style={{ border: "1px solid var(--panel-edge-soft)", borderRadius: 2, padding: "10px 14px", fontSize: 11, background: "var(--panel)" }}>
+                  <div style={{ color: "var(--bone)", fontFamily: "Cinzel, serif", letterSpacing: "0.08em", fontSize: 12 }}>
+                    {z.sequence}. {z.name}
+                  </div>
+                  <div style={{ color: c, marginTop: 4, fontSize: 10, letterSpacing: "0.14em" }}>
+                    {even ? "CONTESTED" : lWin ? "LOYALIST VICTORY" : "TRAITOR VICTORY"}
+                    <span style={{ color: "var(--neutral)" }}> · {z.loyalist_vp}–{z.traitor_vp}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ——— auth or submit ——— */}
       {profile ? (
         <>
-          <section className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
+          <section className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
             <div>
-              <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>SIGNED IN AS</div>
-              <Link href={`/profile/${profile.handle}`} style={{ fontSize: 18, fontFamily: "Cinzel, serif" }}>
+              <div className="eyebrow">SIGNED IN AS</div>
+              <Link href={`/profile/${profile.handle}`} className="display" style={{ fontSize: 20, letterSpacing: "0.06em" }}>
                 {profile.handle}
               </Link>
-              <EditHandle current={profile.handle} />
+              <div style={{ marginTop: 8 }}>
+                <EditHandle current={profile.handle} />
+              </div>
             </div>
             <form action={signOut}>
               <button className="btn-ghost" type="submit">SIGN OUT</button>
@@ -81,35 +159,38 @@ export default async function Home() {
           {myRecord && (
             <MiniProfileCard standing={myRecord.standing} factions={myRecord.factions} />
           )}
-          <SubmitForm />
+          <SubmitForm events={submittableEvents.map((e: any) => ({ id: e.id, name: e.name }))} />
         </>
       ) : (
         <AuthPanel />
       )}
 
-      {/* dispatches */}
-      <section style={{ marginTop: 36 }}>
-        <h2 style={{ fontSize: 16 }}>DISPATCHES FROM THE FRONT</h2>
+      {/* ——— dispatches ——— */}
+      <section style={{ marginTop: 48 }}>
+        <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>VOX INTERCEPTS</div>
+        <h2 className="section-title">DISPATCHES FROM THE FRONT</h2>
+        <div style={{ marginTop: 14 }}>
         {recent.length === 0 ? (
-          <p style={{ color: "var(--bone-dim)", fontSize: 12 }}>No battles yet. Be the first.</p>
+          <p className="prose">The vox is silent. No battles have been recorded — be the first to commit a result.</p>
         ) : (
           recent.map((b) => (
-            <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid var(--panel-edge)", fontSize: 12 }}>
-              <span style={{ width: 8, height: 8, transform: "rotate(45deg)", background: b.side === "loyalist" ? "var(--gold)" : "var(--crimson)" }} />
+            <div key={b.id} className="data" style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderBottom: "1px solid var(--panel-edge-soft)", fontSize: 12 }}>
+              <span className="side-dot" style={{ background: b.side === "loyalist" ? "var(--gold)" : "var(--crimson)" }} />
               <span style={{ flexGrow: 1, color: "var(--bone)" }}>
                 {b.faction}{b.event ? <span style={{ color: "var(--bone-dim)" }}> · {b.event}</span> : null}
               </span>
-              <span style={{ color: "var(--bone)" }}>+{b.score} VP</span>
+              <span style={{ color: b.side === "loyalist" ? "var(--gold-bright)" : "var(--crimson-bright)" }}>+{b.score} VP</span>
               <Link href={`/profile/${b.handle}`} style={{ fontSize: 10, minWidth: 90, textAlign: "right" }}>{b.handle}</Link>
               <span style={{ color: "var(--neutral)", fontSize: 10, minWidth: 70, textAlign: "right" }}>{timeAgo(b.created_at)}</span>
             </div>
           ))
         )}
-        <p style={{ marginTop: 16 }}>
-          <Link href="/ledger">→ Search the full public ledger</Link>
-          {" · "}
-          <Link href="/leaderboard">🏆 Leaderboard</Link>
-          {profile?.is_admin && <> · <Link href="/admin">⚙ Admin</Link></>}
+        </div>
+        <hr className="divider" />
+        <p className="data" style={{ fontSize: 12, display: "flex", gap: 18, flexWrap: "wrap" }}>
+          <Link href="/ledger">Search the public ledger →</Link>
+          <Link href="/leaderboard">Leaderboard →</Link>
+          {profile?.is_admin && <Link href="/admin">⚙ Admin</Link>}
         </p>
       </section>
     </main>

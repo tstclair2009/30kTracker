@@ -11,14 +11,15 @@ export default async function LedgerPage() {
   return (
     <main className="wrap">
       <p><Link href="/">← Back to the war</Link></p>
-      <h1 style={{ fontSize: 22, color: "var(--bone)" }}>THE PUBLIC LEDGER</h1>
+      <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>EVERY BATTLE, ON THE RECORD</div>
+      <h1 className="display-xl" style={{ fontSize: "clamp(26px, 5vw, 38px)" }}>THE PUBLIC LEDGER</h1>
 
       <section className="panel">
         <LedgerSearch />
       </section>
 
       <section style={{ marginTop: 36 }}>
-        <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.12em", marginBottom: 10 }}>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>
           ALL SOLDIERS · {standings.length} ON THE ROLLS · RANKED BY VP
         </div>
         {standings.length === 0 ? (
@@ -34,7 +35,7 @@ export default async function LedgerPage() {
                     <span style={{ color: "var(--bone)", fontSize: 13 }}>{f.handle}</span>
                     <span style={{ color: "var(--bone-dim)", fontSize: 10 }}>#{i + 1}</span>
                   </div>
-                  <div style={{ color: "var(--gold)", fontSize: 10, marginTop: 4, fontFamily: "Cinzel, serif" }}>{r.title}</div>
+                  <div style={{ color: "var(--gold-bright)", fontSize: 10, marginTop: 4, fontFamily: "Cinzel, serif", letterSpacing: "0.1em" }}>{r.title}</div>
                   <div style={{ color: "var(--bone-dim)", fontSize: 10, marginTop: 4 }}>
                     {Number(f.vp).toLocaleString()} VP · {f.battles} battle{Number(f.battles) === 1 ? "" : "s"}
                   </div>

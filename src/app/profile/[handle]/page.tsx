@@ -27,10 +27,10 @@ export default async function ProfilePage({ params }: { params: { handle: string
       </p>
 
       <section className="panel">
-        <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.2em" }}>
+        <div className="eyebrow eyebrow-gold">
           SERVICE RECORD · {rank.grade}
         </div>
-        <div style={{ fontFamily: "Cinzel, serif", fontWeight: 700, fontSize: 26, color: "var(--bone)" }}>
+        <div className="display-xl" style={{ fontSize: "clamp(28px, 5vw, 40px)", marginTop: 4 }}>
           {rank.title}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
@@ -45,7 +45,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
             <span>{rank.next ? `${rank.toNext} VP → ${rank.next.title}` : "HIGHEST HONOR ATTAINED"}</span>
           </div>
           <div style={{ height: 8, background: "var(--void)", border: "1px solid var(--panel-edge)", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${(rank.pct * 100).toFixed(1)}%`, background: "linear-gradient(90deg, var(--gold-deep), var(--gold))" }} />
+            <div style={{ height: "100%", width: `${(rank.pct * 100).toFixed(1)}%`, background: "linear-gradient(90deg, var(--gold-deep), var(--gold-bright))" }} />
           </div>
         </div>
 
@@ -58,7 +58,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
             { label: "TRAITOR VP", value: Number(standing.traitor_vp ?? 0).toLocaleString(), color: "var(--crimson)" },
           ].map((s) => (
             <div key={s.label} style={{ borderLeft: "1px solid var(--panel-edge)", paddingLeft: 12 }}>
-              <div style={{ fontSize: 22, color: s.color }}>{s.value}</div>
+              <div className="data" style={{ fontSize: 22, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 9, color: "var(--bone-dim)", letterSpacing: "0.12em" }}>{s.label}</div>
             </div>
           ))}
@@ -67,7 +67,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
         {/* faction breakdown */}
         {factions.length > 0 && (
           <div style={{ marginTop: 22 }}>
-            <div className="label">Faction breakdown</div>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>FACTION BREAKDOWN</div>
             {factions.map((f: any) => {
               const c = f.side === "traitor" ? "var(--crimson)" : "var(--gold)";
               const w = (Number(f.vp) / Number(topFaction)) * 100;
@@ -87,7 +87,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
         {/* recent battles */}
         {recent.length > 0 && (
           <div style={{ marginTop: 22 }}>
-            <div className="label">Recent battles</div>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>RECENT BATTLES</div>
             {recent.map((s: any) => (
               <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--panel-edge)", fontSize: 11 }}>
                 <span style={{ width: 7, height: 7, transform: "rotate(45deg)", background: s.side === "loyalist" ? "var(--gold)" : "var(--crimson)" }} />

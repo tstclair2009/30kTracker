@@ -27,7 +27,8 @@ export default async function LeaderboardPage({
   return (
     <main className="wrap">
       <p><Link href="/">← Back to the war</Link></p>
-      <h1 style={{ fontSize: 22, color: "var(--bone)" }}>LEADERBOARD</h1>
+      <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>THE HONORED AND THE DAMNED</div>
+      <h1 className="display-xl" style={{ fontSize: "clamp(26px, 5vw, 38px)" }}>LEADERBOARD</h1>
 
       <section className="panel">
         <Suspense fallback={<div style={{ fontSize: 11, color: "var(--bone-dim)" }}>Loading filters…</div>}>
@@ -36,7 +37,7 @@ export default async function LeaderboardPage({
       </section>
 
       <section style={{ marginTop: 28 }}>
-        <div style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.12em", marginBottom: 12 }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>
           {rows.length} SOLDIER{rows.length === 1 ? "" : "S"} · RANKED BY VP
           {filterLabel ? ` · ${filterLabel}` : ""}
         </div>

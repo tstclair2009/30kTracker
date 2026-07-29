@@ -41,8 +41,8 @@ export default function AdminPanels() {
       {/* accounts report */}
       <section className="panel">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <h2 style={{ fontSize: 16, margin: 0, color: "var(--bone)" }}>ACCOUNTS REPORT</h2>
-          <button className="btn" style={{ background: "var(--gold)" }} onClick={onReport} disabled={reportBusy}>
+          <h2 className="section-title">ACCOUNTS REPORT</h2>
+          <button className="btn" onClick={onReport} disabled={reportBusy}>
             {reportBusy ? "ASSEMBLING…" : rows ? "↻ REFRESH" : "RUN REPORT"}
           </button>
         </div>
@@ -75,9 +75,9 @@ export default function AdminPanels() {
       </section>
 
       {/* reset */}
-      <section className="panel" style={{ borderColor: "var(--crimson-deep)" }}>
-        <h2 style={{ fontSize: 16, margin: 0, color: "var(--bone)" }}>RESET THE WAR LEDGER</h2>
-        <p style={{ fontSize: 11, color: "var(--bone-dim)", lineHeight: 1.7 }}>
+      <section className="panel panel-crimson" style={{ borderColor: "var(--crimson-deep)" }}>
+        <h2 className="section-title">RESET THE WAR LEDGER</h2>
+        <p className="prose" style={{ marginTop: 8 }}>
           Seals the current war as a past season and opens a fresh one. History is preserved automatically.
           Accounts are kept; live VP and ranks return to zero.
         </p>
@@ -90,7 +90,7 @@ export default function AdminPanels() {
           <div style={{ border: "1px solid var(--crimson)", borderRadius: 2, padding: 16, background: "rgba(192,57,43,0.07)" }}>
             <p style={{ fontSize: 12, color: "var(--bone)", marginTop: 0 }}>Confirm to seal the current war and open a new one.</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button className="btn" style={{ flex: "1 1 200px", background: "var(--crimson)" }} onClick={onReset} disabled={resetBusy}>
+              <button className="btn btn-crimson" style={{ flex: "1 1 200px" }} onClick={onReset} disabled={resetBusy}>
                 {resetBusy ? "RESETTING…" : "CONFIRM RESET"}
               </button>
               <button className="btn-ghost" style={{ flex: "1 1 120px" }} onClick={() => setArmed(false)} disabled={resetBusy}>CANCEL</button>
@@ -102,7 +102,7 @@ export default function AdminPanels() {
       {/* seasons / archives */}
       <section className="panel">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, margin: 0, color: "var(--bone)" }}>PAST WARS</h2>
+          <h2 className="section-title">PAST WARS</h2>
           <button className="btn-ghost" onClick={onSeasons}>LOAD SEASONS</button>
         </div>
         {seasons && seasons.map((s) => (

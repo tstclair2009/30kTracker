@@ -46,6 +46,16 @@ export async function submitBattle(formData: FormData) {
     .from("seasons").select("id").is("ended_at", null).maybeSingle();
   if (!season) return { error: "No active war. Ask an admin to open a season." };
 
+  // optional event attachment (special events / approved participation);
+  // RLS re-checks eligibility, this is just a friendly pre-check
+  const eventRaw = formData.get("event_id");
+  const eventId = eventRaw ? Number(eventRaw) : null;
+
+  // every report is tagged with the active warzone (the current chapter),
+  // so monthly narrative tallies accrue automatically
+  const { data: wz } = await supabase.rpc("active_warzone_id");
+  const warzoneId = wz ?? null;
+
   const { error } = await supabase.from("battles").insert({
     player_id: user.id,
     season_id: season.id,
@@ -53,6 +63,8 @@ export async function submitBattle(formData: FormData) {
     side,
     score,
     event: event || null,
+    event_id: eventId,
+    warzone_id: warzoneId,
   });
 
   if (error) {

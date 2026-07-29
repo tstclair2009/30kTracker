@@ -1,95 +1,276 @@
+/* ============================================================
+   THE GALACTIC WAR — elevated grimdark design system
+   Type roles: Cinzel = display (carved inscription)
+               Cormorant = prose (manuscript body)
+               IBM Plex Mono = data only (numbers, handles, time)
+   ============================================================ */
+
 :root {
-  --void: #08080d;
-  --panel: #11121a;
-  --panel-edge: #2a2c3a;
-  --bone: #e8e2d0;
-  --bone-dim: #8a8678;
-  --neutral: #5a5a66;
-  --gold: #d4a14a;
-  --gold-deep: #6b5320;
-  --crimson: #c0392b;
-  --crimson-deep: #5a1e18;
+  /* palette — deep space with warm brass and dried blood */
+  --void: #050507;
+  --abyss: #0c0b12;
+  --panel: rgba(13, 12, 19, 0.92);
+  --panel-edge: #2b2735;
+  --panel-edge-soft: #1c1926;
+
+  --bone: #e6dfc8;
+  --bone-dim: #90897a;
+  --neutral: #575362;
+
+  --gold: #c9a227;
+  --gold-bright: #ecd27c;
+  --gold-deep: #6e5716;
+  --crimson: #a41f1f;
+  --crimson-bright: #e05252;
+  --crimson-deep: #4a1512;
+
+  --hairline-gold: linear-gradient(90deg, transparent, rgba(201,162,39,0.55), transparent);
+  --hairline-crimson: linear-gradient(90deg, transparent, rgba(164,31,31,0.5), transparent);
 }
 
 * { box-sizing: border-box; }
 
-html {
-  background: var(--void);
-}
+html { background: var(--void); }
 
 html, body {
   margin: 0;
   padding: 0;
   color: var(--bone);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Cormorant", serif;
+  font-size: 17px;
+  line-height: 1.55;
 }
+body { background: transparent; }
 
-body {
-  background: transparent;
-}
+a { color: var(--gold-bright); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--gold-deep); }
 
-a { color: var(--gold); text-decoration: none; }
-a:hover { text-decoration: underline dotted; }
+::selection { background: rgba(201,162,39,0.28); }
 
 .wrap {
-  max-width: 920px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 16px 80px;
+  padding: 40px 20px 96px;
 }
 
-.panel {
-  background: rgba(17, 18, 26, 0.9);
-  backdrop-filter: blur(2px);
-  border: 1px solid var(--panel-edge);
-  border-radius: 3px;
-  padding: 24px;
-  margin-top: 36px;
+/* ---------- type roles ---------- */
+h1, h2, h3, .display {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--bone);
+  margin: 0;
 }
-
-h1, h2 { font-family: "Cinzel", serif; letter-spacing: 0.2em; font-weight: 600; }
-
-.label {
+.display-xl {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+}
+.data, table, input, select, .btn-ghost {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.15em;
+}
+.prose {
+  font-family: "Cormorant", serif;
+  font-size: 17px;
+  color: var(--bone-dim);
+  line-height: 1.6;
+}
+
+/* eyebrow: small engraved caption above a section */
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
   color: var(--bone-dim);
-  display: block;
-  margin-bottom: 6px;
+}
+.eyebrow-gold { color: var(--gold); }
+.eyebrow-crimson { color: var(--crimson-bright); }
+
+/* ---------- panels: engraved plates ---------- */
+.panel {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(201,162,39,0.05), transparent 55%),
+    var(--panel);
+  border: 1px solid var(--panel-edge-soft);
+  border-radius: 2px;
+  padding: 28px;
+  margin-top: 40px;
+  backdrop-filter: blur(3px);
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 8%; right: 8%;
+  height: 1px;
+  background: var(--hairline-gold);
+}
+.panel-crimson::before { background: var(--hairline-crimson); }
+
+/* section header inside/above panels */
+.section-title {
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  color: var(--bone);
 }
 
-input, select, button { font-family: "IBM Plex Mono", monospace; }
+/* ---------- controls ---------- */
+.label {
+  display: block;
+  margin-bottom: 7px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
 
 .input {
   width: 100%;
-  background: var(--void);
+  background: rgba(5,5,7,0.75);
   border: 1px solid var(--panel-edge);
   border-radius: 2px;
   color: var(--bone);
-  padding: 11px 12px;
+  padding: 12px 13px;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 13px;
+  transition: border-color .18s, box-shadow .18s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--gold-deep);
+  box-shadow: 0 0 0 1px var(--gold-deep), 0 0 18px rgba(201,162,39,0.12);
 }
 
 .btn {
   cursor: pointer;
   font-family: "Cinzel", serif;
   font-weight: 700;
-  letter-spacing: 0.22em;
-  color: var(--void);
-  background: var(--bone);
-  border: none;
+  font-size: 14px;
+  letter-spacing: 0.26em;
+  color: #171204;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, #a5851f);
+  border: 1px solid #8a6f1b;
   border-radius: 2px;
-  padding: 13px 18px;
+  padding: 14px 20px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 10px rgba(201,162,39,0.15);
+  transition: filter .15s, box-shadow .15s;
 }
-.btn:disabled { background: var(--bone-dim); cursor: wait; }
+.btn:hover:not(:disabled) { filter: brightness(1.07); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 16px rgba(201,162,39,0.3); }
+.btn:disabled { filter: grayscale(0.6) brightness(0.75); cursor: wait; }
+.btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+.btn-crimson {
+  color: #f5e3dd;
+  background: linear-gradient(180deg, #c23a3a, var(--crimson) 55%, #7c1717);
+  border-color: #6b1414;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 10px rgba(164,31,31,0.2);
+}
 
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--panel-edge);
   color: var(--bone-dim);
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   cursor: pointer;
   border-radius: 2px;
-  padding: 8px 14px;
+  padding: 9px 15px;
+  transition: color .15s, border-color .15s;
+}
+.btn-ghost:hover { color: var(--gold-bright); border-color: var(--gold-deep); }
+.btn-ghost:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 2px; }
+
+/* ---------- tables: the data-slate ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--panel-edge);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--bone-dim);
+  text-align: left;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--panel-edge-soft);
+  color: var(--bone);
+}
+tbody tr { transition: background .12s; }
+tbody tr:hover { background: rgba(201,162,39,0.04); }
+
+/* ---------- warfront gauge (the signature) ---------- */
+.gauge-shell {
+  position: relative;
+  height: 26px;
+  background: linear-gradient(180deg, #030304, #0a0910 60%, #030304);
+  border: 1px solid var(--panel-edge);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.gauge-glow-l, .gauge-glow-r {
+  position: absolute; top: 0; bottom: 0; width: 50%;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+.gauge-glow-l { left: 0; background: linear-gradient(90deg, rgba(201,162,39,0.5), transparent 85%); }
+.gauge-glow-r { right: 0; background: linear-gradient(270deg, rgba(164,31,31,0.55), transparent 85%); }
+.gauge-ticks {
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg, transparent, transparent calc(10% - 1px),
+    rgba(230,223,200,0.13) calc(10% - 1px), rgba(230,223,200,0.13) 10%);
+}
+.gauge-center {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: rgba(230,223,200,0.35);
+}
+.gauge-blade {
+  position: absolute; top: -7px; width: 3px; height: 40px;
+  background: linear-gradient(180deg, var(--bone), rgba(230,223,200,0.15));
+  box-shadow: 0 0 12px rgba(230,223,200,0.7);
+  transition: left 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gauge-blade::before {
+  content: "";
+  position: absolute; top: -5px; left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 7px; height: 7px;
+  background: var(--bone);
+}
+
+/* monumental numerals flanking the gauge */
+.war-num {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: clamp(26px, 5vw, 44px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- misc ---------- */
+.divider {
+  height: 1px; border: 0; margin: 34px 0;
+  background: var(--hairline-gold);
+}
+.side-dot {
+  width: 8px; height: 8px; flex-shrink: 0;
+  transform: rotate(45deg);
+}
+
+/* page-load rise for the hero (respects reduced motion) */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.7s cubic-bezier(0.2,0.8,0.2,1) both; }
+.rise-2 { animation: rise 0.7s 0.12s cubic-bezier(0.2,0.8,0.2,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise, .rise-2 { animation: none; }
+  .gauge-blade, .input, .btn { transition: none; }
 }

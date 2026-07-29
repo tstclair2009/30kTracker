@@ -253,3 +253,84 @@ export async function getCurrentProfile() {
     is_admin: false,
   };
 }
+
+// ————— Warzones (monthly narrative battles) —————
+export type Warzone = {
+  warzone_id: number;
+  name: string;
+  narrative: string | null;
+  sequence: number;
+  status: "upcoming" | "active" | "concluded";
+  starts_at: string | null;
+  ends_at: string | null;
+  loyalist_vp: number;
+  traitor_vp: number;
+  battle_count: number;
+};
+
+// The active warzone (current chapter of the war), with live tallies.
+export async function getActiveWarzone(): Promise<Warzone | null> {
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).single();
+  if (!season) return null;
+  const { data } = await supabase
+    .from("v_warzone_balance")
+    .select("*")
+    .eq("season_id", season.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    ...data,
+    loyalist_vp: Number(data.loyalist_vp),
+    traitor_vp: Number(data.traitor_vp),
+    battle_count: Number(data.battle_count),
+  } as Warzone;
+}
+
+// All warzones of the open season, campaign order (the war so far).
+export async function getWarzoneHistory(): Promise<Warzone[]> {
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).single();
+  if (!season) return [];
+  const { data } = await supabase
+    .from("v_warzone_balance")
+    .select("*")
+    .eq("season_id", season.id)
+    .order("sequence", { ascending: true });
+  return (data ?? []).map((w: any) => ({
+    ...w,
+    loyalist_vp: Number(w.loyalist_vp),
+    traitor_vp: Number(w.traitor_vp),
+    battle_count: Number(w.battle_count),
+  })) as Warzone[];
+}
+
+// Events the given user may currently submit into: open-participation special
+// events, plus events where they are an approved participant.
+export async function getSubmittableEvents(userId: string | null) {
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).single();
+  if (!season) return [];
+
+  const { data: openEvents } = await supabase
+    .from("events")
+    .select("id, name, is_special, open_participation, status")
+    .eq("season_id", season.id)
+    .in("status", ["open", "active"]);
+
+  const events = openEvents ?? [];
+  if (!userId) return events.filter((e: any) => e.open_participation);
+
+  const { data: mine } = await supabase
+    .from("event_participants")
+    .select("event_id")
+    .eq("player_id", userId)
+    .eq("status", "approved");
+  const approved = new Set((mine ?? []).map((m: any) => m.event_id));
+
+  return events.filter((e: any) => e.open_participation || approved.has(e.id));
+}

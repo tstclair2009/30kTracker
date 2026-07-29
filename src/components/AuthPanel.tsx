@@ -54,11 +54,12 @@ export default function AuthPanel() {
 
   return (
     <section className="panel">
-      <h2 style={{ fontSize: 16, margin: "0 0 4px", color: "var(--bone)" }}>
+      <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>IDENTIFICATION REQUIRED</div>
+      <h2 className="section-title">
         {mode === "register" ? "ENLIST IN THE WAR" : "RESUME YOUR CAMPAIGN"}
       </h2>
-      <p style={{ fontSize: 11, color: "var(--bone-dim)", lineHeight: 1.6, marginTop: 0 }}>
-        Sign in to commit results to the ledger.
+      <p className="prose" style={{ marginTop: 8, marginBottom: 0 }}>
+        Sign in to commit results to the ledger. Your record follows you across the war.
       </p>
 
       {/* SSO */}
@@ -68,7 +69,7 @@ export default function AuthPanel() {
         </button>
         <button
           className="btn"
-          style={{ flex: "1 1 200px", background: "var(--gold)" }}
+          style={{ flex: "1 1 200px" }}
           onClick={() => signInWith("facebook")}
         >
           CONTINUE WITH FACEBOOK
@@ -77,9 +78,9 @@ export default function AuthPanel() {
 
       {/* divider */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px" }}>
-        <div style={{ flex: 1, height: 1, background: "var(--panel-edge)" }} />
-        <span style={{ fontSize: 10, color: "var(--bone-dim)", letterSpacing: "0.15em" }}>OR WITH EMAIL</span>
-        <div style={{ flex: 1, height: 1, background: "var(--panel-edge)" }} />
+        <div style={{ flex: 1, height: 1, background: "var(--hairline-gold)" }} />
+        <span className="eyebrow">OR WITH EMAIL</span>
+        <div style={{ flex: 1, height: 1, background: "var(--hairline-gold)" }} />
       </div>
 
       {/* email/password */}

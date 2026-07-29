@@ -72,7 +72,7 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
 
       ctx.clearRect(0, 0, w, h);
       // deep space wash
-      ctx.fillStyle = "#06060c";
+      ctx.fillStyle = "#050507";
       ctx.fillRect(0, 0, w, h);
 
       // ---- side-color edges (brighten toward the winner) ----
@@ -82,14 +82,14 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
       const traitorStrength = 0.10 + Math.max(0, -lead) * 0.32;
 
       const gL = ctx.createLinearGradient(0, 0, w * 0.45, 0);
-      gL.addColorStop(0, `rgba(212,161,74,${loyalStrength})`);
-      gL.addColorStop(1, "rgba(212,161,74,0)");
+      gL.addColorStop(0, `rgba(201,162,39,${loyalStrength})`);
+      gL.addColorStop(1, "rgba(201,162,39,0)");
       ctx.fillStyle = gL;
       ctx.fillRect(0, 0, w * 0.45, h);
 
       const gR = ctx.createLinearGradient(w, 0, w * 0.55, 0);
-      gR.addColorStop(0, `rgba(192,57,43,${traitorStrength})`);
-      gR.addColorStop(1, "rgba(192,57,43,0)");
+      gR.addColorStop(0, `rgba(164,31,31,${traitorStrength})`);
+      gR.addColorStop(1, "rgba(164,31,31,0)");
       ctx.fillStyle = gR;
       ctx.fillRect(w * 0.55, 0, w * 0.45, h);
 
@@ -97,7 +97,7 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
       for (const s of stars) {
         s.tw += 0.02;
         const a = 0.4 + Math.sin(s.tw) * 0.3;
-        ctx.fillStyle = `rgba(232,226,208,${a})`;
+        ctx.fillStyle = `rgba(230,223,200,${a})`;
         ctx.beginPath();
         ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
         ctx.fill();
@@ -109,9 +109,9 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
 
       // star glow
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, minDim * 0.12);
-      glow.addColorStop(0, "rgba(212,161,74,0.5)");
-      glow.addColorStop(0.4, "rgba(192,90,43,0.18)");
-      glow.addColorStop(1, "rgba(192,57,43,0)");
+      glow.addColorStop(0, "rgba(201,162,39,0.5)");
+      glow.addColorStop(0.4, "rgba(164,80,31,0.18)");
+      glow.addColorStop(1, "rgba(164,31,31,0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(cx, cy, minDim * 0.12, 0, Math.PI * 2);
@@ -170,7 +170,7 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
       // draw ships
       for (const ship of ships) {
         const sx = ship.x * w, sy = ship.y * h;
-        const col = ship.side === "loyalist" ? "#d4a14a" : "#c0392b";
+        const col = ship.side === "loyalist" ? "#c9a227" : "#a41f1f";
         ctx.fillStyle = col;
         ctx.beginPath();
         // little triangle pointing in travel direction
@@ -181,7 +181,7 @@ export default function SpaceBattle({ balance = 0 }: { balance?: number }) {
         ctx.closePath();
         ctx.fill();
         // engine glow
-        ctx.fillStyle = ship.side === "loyalist" ? "rgba(212,161,74,0.4)" : "rgba(192,57,43,0.4)";
+        ctx.fillStyle = ship.side === "loyalist" ? "rgba(201,162,39,0.4)" : "rgba(164,31,31,0.4)";
         ctx.beginPath();
         ctx.arc(sx - dir * ship.size * 1.3, sy, ship.size * 0.4, 0, Math.PI * 2);
         ctx.fill();

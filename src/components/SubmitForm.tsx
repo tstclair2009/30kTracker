@@ -4,7 +4,7 @@ import { useState } from "react";
 import { submitBattle } from "@/app/actions";
 import { FACTIONS } from "@/lib/factions";
 
-export default function SubmitForm() {
+export default function SubmitForm({ events = [] }: { events?: { id: number; name: string }[] }) {
   const [side, setSide] = useState("");
   const [msg, setMsg] = useState<{ ok?: boolean; error?: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -26,7 +26,8 @@ export default function SubmitForm() {
 
   return (
     <section className="panel">
-      <h2 style={{ fontSize: 16, margin: "0 0 18px", color: "var(--bone)" }}>
+      <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>FIELD REPORT</div>
+      <h2 className="section-title" style={{ marginBottom: 20 }}>
         SUBMIT BATTLE RESULT
       </h2>
       <form onSubmit={onSubmit}>
@@ -43,7 +44,7 @@ export default function SubmitForm() {
             <input className="input" type="number" name="score" min={0} max={100} step={1} placeholder="0–100" />
           </div>
           <div>
-            <label className="label">Event name</label>
+            <label className="label">Occasion / notes (optional)</label>
             <input className="input" type="text" name="event" maxLength={80} placeholder="e.g. The Crucible · Reforged" />
           </div>
         </div>
@@ -61,7 +62,7 @@ export default function SubmitForm() {
                 onClick={() => setSide(o.id)}
                 style={{
                   flex: 1, padding: 12, cursor: "pointer", fontFamily: "Cinzel, serif",
-                  fontWeight: 600, fontSize: 14, letterSpacing: "0.2em", borderRadius: 2,
+                  fontWeight: 600, fontSize: 14, letterSpacing: "0.24em", borderRadius: 2,
                   background: side === o.id ? o.color + "22" : "var(--void)",
                   color: side === o.id ? o.color : "var(--bone-dim)",
                   border: `1px solid ${side === o.id ? o.color : "var(--panel-edge)"}`,
