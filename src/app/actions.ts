@@ -48,8 +48,18 @@ export async function submitBattle(formData: FormData) {
 
   // optional event attachment (special events / approved participation);
   // RLS re-checks eligibility, this is just a friendly pre-check
-  const eventRaw = formData.get("event_id");
+  const eventRaw = String(formData.get("event_id") || "").trim();
   const eventId = eventRaw ? Number(eventRaw) : null;
+  if (eventId !== null) {
+    if (!Number.isInteger(eventId) || eventId <= 0)
+      return { error: "Invalid event selection." };
+    const { data: allowed } = await supabase.rpc("may_submit_to_event", {
+      uid: user.id,
+      ev: eventId,
+    });
+    if (!allowed)
+      return { error: "You cannot report into that event — it may be closed, or you are not an approved participant." };
+  }
 
   // every report is tagged with the active warzone (the current chapter),
   // so monthly narrative tallies accrue automatically
@@ -74,6 +84,7 @@ export async function submitBattle(formData: FormData) {
   }
 
   revalidatePath("/");
+  if (eventId !== null) revalidatePath(`/event/${eventId}`);
   return { ok: true };
 }
 

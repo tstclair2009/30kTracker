@@ -49,6 +49,22 @@ export default function SubmitForm({ events = [] }: { events?: { id: number; nam
           </div>
         </div>
 
+        {events.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <label className="label">Report to event (optional)</label>
+            <select className="input" name="event_id" defaultValue="">
+              <option value="">— none · the global war —</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.name}</option>
+              ))}
+            </select>
+            <p style={{ color: "var(--neutral)", fontSize: 11, marginTop: 6 }}>
+              Battles reported to an event count on that event&apos;s standings. Only events you may
+              submit to are listed.
+            </p>
+          </div>
+        )}
+
         <div style={{ marginTop: 18 }}>
           <label className="label">Allegiance (changeable each battle)</label>
           <div style={{ display: "flex", gap: 10 }}>
