@@ -51,6 +51,25 @@ export async function viewSeasonBattles(seasonId: number) {
   }));
 }
 
+// Void (delete) a single battle report — moderation for typos, duplicates,
+// or bad-faith submissions. The battles_admin_delete RLS policy is the
+// enforcement; this is just the UI's path to it.
+export async function voidBattle(battleId: number) {
+  const supabase = await requireAdmin();
+  if (!Number.isInteger(battleId) || battleId <= 0) return { error: "Invalid battle id." };
+  const { data, error } = await supabase
+    .from("battles")
+    .delete()
+    .eq("id", battleId)
+    .select("id, event_id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "Battle not found (already voided?)." };
+  revalidatePath("/");
+  revalidatePath("/admin");
+  if (data[0].event_id) revalidatePath(`/event/${data[0].event_id}`);
+  return { ok: true };
+}
+
 // ————— Warzones (monthly narrative battles) —————
 
 // Conclude the active warzone (if any) and open the next chapter, atomically.

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { loadMoreDispatches } from "@/app/actions";
+import { loadMoreDispatches, latestDispatches } from "@/app/actions";
+import { createClient } from "@/lib/supabase-client";
 import type { Battle } from "@/lib/data";
 
 function timeAgo(ts: string) {
@@ -20,6 +21,34 @@ export default function Dispatches({ initial, pageSize = 20 }: { initial: Battle
   // a short first page means there's nothing older to fetch
   const [exhausted, setExhausted] = useState(initial.length < pageSize);
   const [busy, setBusy] = useState(false);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // realtime: when new reports land (or are withdrawn/voided), refresh the
+  // newest page and merge it on top of whatever is already loaded
+  useEffect(() => {
+    const supabase = createClient();
+    async function refresh() {
+      const fresh = await latestDispatches();
+      // the fresh page replaces its whole time window (so withdrawn or voided
+      // reports vanish); older pagination below it is kept
+      setBattles((prev) => {
+        const oldestFresh = fresh[fresh.length - 1]?.created_at;
+        if (!oldestFresh) return fresh;
+        return [...fresh, ...prev.filter((b) => b.created_at < oldestFresh)];
+      });
+    }
+    const channel = supabase
+      .channel("dispatches-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "battles" }, () => {
+        if (debounce.current) clearTimeout(debounce.current);
+        debounce.current = setTimeout(refresh, 500);
+      })
+      .subscribe();
+    return () => {
+      if (debounce.current) clearTimeout(debounce.current);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   async function onMore() {
     const oldest = battles[battles.length - 1];

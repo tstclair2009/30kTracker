@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { resetWar, fetchReport, listSeasons, viewSeasonBattles } from "@/app/admin/admin-actions";
+import { resetWar, fetchReport, listSeasons, viewSeasonBattles, voidBattle } from "@/app/admin/admin-actions";
 
 export default function AdminPanels() {
   const [rows, setRows] = useState<any[] | null>(null);
@@ -11,6 +11,9 @@ export default function AdminPanels() {
   const [resetMsg, setResetMsg] = useState("");
   const [seasons, setSeasons] = useState<any[] | null>(null);
   const [battles, setBattles] = useState<{ label: string; list: any[] } | null>(null);
+  const [voidArmed, setVoidArmed] = useState<number | null>(null);
+  const [voidBusy, setVoidBusy] = useState<number | null>(null);
+  const [voidErr, setVoidErr] = useState("");
 
   async function onReport() {
     setReportBusy(true);
@@ -34,6 +37,18 @@ export default function AdminPanels() {
   async function onViewSeason(id: number, label: string) {
     const list = await viewSeasonBattles(id);
     setBattles({ label, list });
+    setVoidArmed(null);
+    setVoidErr("");
+  }
+
+  async function onVoid(id: number) {
+    setVoidBusy(id);
+    setVoidErr("");
+    const res = await voidBattle(id);
+    setVoidBusy(null);
+    setVoidArmed(null);
+    if (res.error) return setVoidErr(res.error);
+    setBattles((b) => (b ? { ...b, list: b.list.filter((s) => s.id !== id) } : b));
   }
 
   return (
@@ -119,6 +134,7 @@ export default function AdminPanels() {
         {battles && (
           <div style={{ marginTop: 18 }}>
             <div className="label">War of {battles.label} · {battles.list.length} battles (max 500 shown)</div>
+            {voidErr && <p style={{ color: "var(--crimson)", fontSize: 12 }}>⚠ {voidErr}</p>}
             <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
               {battles.list.map((s) => (
                 <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--panel-edge)", fontSize: 11 }}>
@@ -126,6 +142,21 @@ export default function AdminPanels() {
                   <span style={{ color: "var(--bone-dim)", minWidth: 100 }}>{s.handle}</span>
                   <span style={{ flexGrow: 1, color: "var(--bone)" }}>{s.faction}{s.event ? ` · ${s.event}` : ""}</span>
                   <span style={{ color: "var(--bone)" }}>+{s.score} VP</span>
+                  {voidArmed === s.id ? (
+                    <>
+                      <button className="btn-ghost" style={{ fontSize: 9, color: "var(--crimson)", borderColor: "var(--crimson)" }}
+                        onClick={() => onVoid(s.id)} disabled={voidBusy === s.id}>
+                        {voidBusy === s.id ? "…" : "CONFIRM VOID"}
+                      </button>
+                      <button className="btn-ghost" style={{ fontSize: 9 }} onClick={() => setVoidArmed(null)} disabled={voidBusy === s.id}>
+                        CANCEL
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn-ghost" style={{ fontSize: 9 }} onClick={() => { setVoidArmed(s.id); setVoidErr(""); }}>
+                      VOID
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

@@ -47,6 +47,17 @@ export async function submitBattle(formData: FormData) {
     .from("seasons").select("id").is("ended_at", null).maybeSingle();
   if (!season) return { error: "No active war. Ask an admin to open a season." };
 
+  // daily cap pre-check (RLS enforces the real rule) so spam gets a clear
+  // message instead of a policy violation
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: reportsToday } = await supabase
+    .from("battles")
+    .select("id", { count: "exact", head: true })
+    .eq("player_id", user.id)
+    .gt("created_at", dayAgo);
+  if ((reportsToday ?? 0) >= 10)
+    return { error: "The vox limits each soldier to 10 reports a day. Return to the front tomorrow." };
+
   // optional event attachment (special events / approved participation);
   // RLS re-checks eligibility, this is just a friendly pre-check
   const eventRaw = String(formData.get("event_id") || "").trim();
@@ -118,6 +129,12 @@ export async function withdrawBattle(battleId: number) {
 // Next page of the public dispatches feed (battles older than `before`).
 export async function loadMoreDispatches(before: string) {
   return getRecentBattles(20, before);
+}
+
+// Freshest page of the feed — polled by the client when realtime signals a
+// new report, so the vox intercepts update live.
+export async function latestDispatches() {
+  return getRecentBattles(20);
 }
 
 export async function signOut() {
