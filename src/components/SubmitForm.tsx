@@ -4,7 +4,15 @@ import { useState } from "react";
 import { submitBattle } from "@/app/actions";
 import { FACTIONS } from "@/lib/factions";
 
-export default function SubmitForm({ events = [] }: { events?: { id: number; name: string }[] }) {
+export default function SubmitForm({
+  events = [],
+  fixedEvent,
+}: {
+  events?: { id: number; name: string }[];
+  // When set, every battle from this form reports into that event: the event
+  // is locked (hidden input) instead of offered as a dropdown choice.
+  fixedEvent?: { id: number; name: string };
+}) {
   const [side, setSide] = useState("");
   const [msg, setMsg] = useState<{ ok?: boolean; error?: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,10 +35,16 @@ export default function SubmitForm({ events = [] }: { events?: { id: number; nam
   return (
     <section className="panel">
       <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>FIELD REPORT</div>
-      <h2 className="section-title" style={{ marginBottom: 20 }}>
+      <h2 className="section-title" style={{ marginBottom: fixedEvent ? 8 : 20 }}>
         SUBMIT BATTLE RESULT
       </h2>
+      {fixedEvent && (
+        <p className="data" style={{ color: "var(--bone-dim)", fontSize: 11, letterSpacing: "0.14em", marginBottom: 20 }}>
+          REPORTING INTO: <span style={{ color: "var(--gold-bright)" }}>{fixedEvent.name.toUpperCase()}</span>
+        </p>
+      )}
       <form onSubmit={onSubmit}>
+        {fixedEvent && <input type="hidden" name="event_id" value={fixedEvent.id} />}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
           <div>
             <label className="label">Faction</label>
@@ -49,7 +63,7 @@ export default function SubmitForm({ events = [] }: { events?: { id: number; nam
           </div>
         </div>
 
-        {events.length > 0 && (
+        {!fixedEvent && events.length > 0 && (
           <div style={{ marginTop: 18 }}>
             <label className="label">Report to event (optional)</label>
             <select className="input" name="event_id" defaultValue="">

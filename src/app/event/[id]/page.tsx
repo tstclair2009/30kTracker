@@ -1,5 +1,6 @@
 import { getEventDetail, getCurrentProfile } from "@/lib/data";
 import EventActions from "@/components/EventActions";
+import SubmitForm from "@/components/SubmitForm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -16,6 +17,13 @@ export default async function EventPage({ params }: { params: { id: string } }) 
   const { event, organizerHandle, isOrganizer, standings, roster, myStatus } = data;
   const canManage = isOrganizer || Boolean(profile?.is_admin);
   const approved = roster.filter((r) => r.status === "approved");
+
+  // mirrors the may_submit_to_event RLS rule: the event must be running and the
+  // viewer either joins freely or sits on the approved roster
+  const canSubmit =
+    Boolean(profile) &&
+    ["open", "active"].includes(event.status) &&
+    (event.open_participation || myStatus === "approved");
 
   return (
     <main className="wrap">
@@ -49,6 +57,9 @@ export default async function EventPage({ params }: { params: { id: string } }) 
           roster={roster}
         />
       </section>
+
+      {/* report a battle straight into this event */}
+      {canSubmit && <SubmitForm fixedEvent={{ id: event.id, name: event.name }} />}
 
       {/* standings */}
       <section className="panel">
