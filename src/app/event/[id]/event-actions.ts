@@ -16,6 +16,7 @@ export async function requestJoin(eventId: number) {
     return { error: "Could not send the request. Try again." };
   }
   revalidatePath(`/event/${eventId}`);
+  revalidatePath("/"); // the home events hub shows membership status too
   return { ok: true };
 }
 

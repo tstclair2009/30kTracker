@@ -11,7 +11,7 @@ export default function SubmitForm({
   events = [],
   fixedEvent,
 }: {
-  events?: { id: number; name: string }[];
+  events?: { id: number; name: string; enrolled?: boolean }[];
   // When set, every battle from this form reports into that event: the event
   // is locked (hidden input) instead of offered as a dropdown choice.
   fixedEvent?: { id: number; name: string };
@@ -89,21 +89,36 @@ export default function SubmitForm({
           </div>
         </div>
 
-        {!fixedEvent && events.length > 0 && (
-          <div style={{ marginTop: 18 }}>
-            <label className="label">Report to event (optional)</label>
-            <select className="input" name="event_id" defaultValue="">
-              <option value="">— none · the global war —</option>
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>{ev.name}</option>
-              ))}
-            </select>
-            <p style={{ color: "var(--neutral)", fontSize: 11, marginTop: 6 }}>
-              Battles reported to an event count on that event&apos;s standings. Only events you may
-              submit to are listed.
-            </p>
-          </div>
-        )}
+        {!fixedEvent && events.length > 0 && (() => {
+          const enrolled = events.filter((ev) => ev.enrolled);
+          const open = events.filter((ev) => !ev.enrolled);
+          return (
+            <div style={{ marginTop: 18 }}>
+              <label className="label">Report to event (optional)</label>
+              <select className="input" name="event_id" defaultValue="">
+                <option value="">— none · the global war —</option>
+                {enrolled.length > 0 && (
+                  <optgroup label="Events you're enrolled in">
+                    {enrolled.map((ev) => (
+                      <option key={ev.id} value={ev.id}>{ev.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+                {open.length > 0 && (
+                  <optgroup label="Open events — everyone may report">
+                    {open.map((ev) => (
+                      <option key={ev.id} value={ev.id}>{ev.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p style={{ color: "var(--neutral)", fontSize: 11, marginTop: 6 }}>
+                Battles reported to an event count on that event&apos;s standings. Only events you may
+                submit to are listed.
+              </p>
+            </div>
+          );
+        })()}
 
         <div style={{ marginTop: 18 }}>
           <label className="label">Allegiance (changeable each battle)</label>
