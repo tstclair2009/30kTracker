@@ -1,4 +1,4 @@
-import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile, getActiveWarzone, getWarzoneHistory, getSubmittableEvents, getMyRecentBattles, getMyEventMemberships, getMyEventBattles, getSeasonEventsPublic } from "@/lib/data";
+import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile, getActiveWarzones, getWarzoneHistory, getSubmittableEvents, getMyRecentBattles, getMyEventMemberships, getMyEventBattles, getSeasonEventsPublic } from "@/lib/data";
 import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
@@ -14,11 +14,11 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [balance, recent, profile, warzone, warzoneHistory] = await Promise.all([
+  const [balance, recent, profile, activeWarzones, warzoneHistory] = await Promise.all([
     getWarBalance(),
     getRecentBattles(20),
     getCurrentProfile(),
-    getActiveWarzone(),
+    getActiveWarzones(),
     getWarzoneHistory(),
   ]);
   const [submittableEvents, myReports, myEvents, myEventBattles, seasonEvents] = await Promise.all([
@@ -47,12 +47,12 @@ export default async function Home() {
   // under the gauge.
   const warzoneSection = (
     <>
-      {warzone && (
-        <section className="panel" style={{ marginTop: 28 }}>
+      {activeWarzones.map((warzone) => (
+        <section key={warzone.warzone_id} className="panel" style={{ marginTop: 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 320px" }}>
               <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>
-                CHAPTER {warzone.sequence} · ACTIVE WARZONE
+                CHAPTER {warzone.sequence} · {activeWarzones.length > 1 ? "ACTIVE FRONT" : "ACTIVE WARZONE"}
               </div>
               <h2 className="display-xl" style={{ fontSize: "clamp(22px, 4vw, 32px)" }}>
                 THE BATTLE FOR {warzone.name.toUpperCase()}
@@ -72,7 +72,7 @@ export default async function Home() {
             </div>
           </div>
         </section>
-      )}
+      ))}
 
       {concluded.length > 0 && (
         <section style={{ marginTop: 34 }}>
@@ -142,7 +142,10 @@ export default async function Home() {
           )}
 
           {/* 2 — report */}
-          <SubmitForm events={submittableEvents.map((e: any) => ({ id: e.id, name: e.name, enrolled: e.enrolled }))} />
+          <SubmitForm
+            events={submittableEvents.map((e: any) => ({ id: e.id, name: e.name, enrolled: e.enrolled }))}
+            warzones={activeWarzones.map((w) => ({ id: w.warzone_id, name: w.name, sequence: w.sequence }))}
+          />
           <MyRecentReports reports={myReports} />
 
           {/* 3 — warzone */}

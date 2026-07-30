@@ -88,7 +88,7 @@ export async function advanceWarzone(name: string, narrative: string) {
   return { ok: true, id: data as number };
 }
 
-// Conclude the active warzone without opening a new one (end of campaign arc).
+// Conclude every active front without opening a new one (end of campaign arc).
 export async function concludeWarzone() {
   const supabase = await requireAdmin();
   const { error } = await supabase
@@ -96,6 +96,40 @@ export async function concludeWarzone() {
     .update({ status: "concluded", ends_at: new Date().toISOString() })
     .eq("status", "active");
   if (error) return { error: error.message };
+  revalidatePath("/");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+// Open an ADDITIONAL front alongside the existing active ones — the war can
+// rage on several worlds at once, and players choose where they fight.
+export async function openWarzone(name: string, narrative: string) {
+  const supabase = await requireAdmin();
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 120)
+    return { error: "Warzone name must be 2–120 characters." };
+  const { data, error } = await supabase.rpc("open_warzone", {
+    wz_name: trimmed,
+    wz_narrative: narrative.trim() || null,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/");
+  revalidatePath("/admin");
+  return { ok: true, id: data as number };
+}
+
+// Conclude one specific front, leaving the others open.
+export async function concludeWarzoneById(id: number) {
+  const supabase = await requireAdmin();
+  if (!Number.isInteger(id) || id <= 0) return { error: "Invalid warzone." };
+  const { data, error } = await supabase
+    .from("warzones")
+    .update({ status: "concluded", ends_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "active")
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "That front is not active." };
   revalidatePath("/");
   revalidatePath("/admin");
   return { ok: true };
