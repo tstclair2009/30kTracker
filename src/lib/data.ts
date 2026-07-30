@@ -335,20 +335,91 @@ export async function getSubmittableEvents(userId: string | null) {
   return events.filter((e: any) => e.open_participation || approved.has(e.id));
 }
 
+// The signed-in player's own reports still inside the 15-minute withdraw
+// window (mirrors the battles_self_withdraw RLS policy).
+export async function getMyRecentBattles(userId: string | null) {
+  if (!userId) return [];
+  const supabase = createClient();
+  const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("battles")
+    .select("id, faction, side, score, event_id, created_at")
+    .eq("player_id", userId)
+    .gt("created_at", cutoff)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as {
+    id: number; faction: string; side: "loyalist" | "traitor";
+    score: number; event_id: number | null; created_at: string;
+  }[];
+}
+
+// The signed-in player's event memberships this season (any status), so the
+// home page can show whether join requests were approved without the player
+// having to revisit each event page.
+export async function getMyEventMemberships(userId: string | null) {
+  if (!userId) return [];
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).maybeSingle();
+  if (!season) return [];
+  const { data } = await supabase
+    .from("event_participants")
+    .select("status, events!inner(id, name, status, season_id)")
+    .eq("player_id", userId)
+    .eq("events.season_id", season.id);
+  return (data ?? [])
+    .map((m: any) => ({
+      eventId: m.events.id as number,
+      name: m.events.name as string,
+      eventStatus: m.events.status as string,
+      myStatus: m.status as "requested" | "approved" | "rejected",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 // ————— Event pages —————
 
-// Public list of this season's events (for /events discovery).
-export async function getSeasonEventsPublic() {
+// Public list of this season's events (for /events discovery), enriched with
+// roster size and — when a viewer is given — their own membership status.
+export async function getSeasonEventsPublic(viewerId: string | null = null) {
   const supabase = createClient();
   const { data: season } = await supabase
     .from("seasons").select("id").is("ended_at", null).single();
   if (!season) return [];
   const { data } = await supabase
     .from("events")
-    .select("id, name, description, status, is_special, open_participation, rolls_up, created_at")
+    .select("id, name, description, status, is_special, open_participation, rolls_up, starts_at, ends_at, created_at")
     .eq("season_id", season.id)
     .order("created_at", { ascending: false });
-  return data ?? [];
+  const events = data ?? [];
+  if (events.length === 0) return [];
+
+  const ids = events.map((e: any) => e.id);
+  const [{ data: parts }, mineRes] = await Promise.all([
+    supabase
+      .from("event_participants")
+      .select("event_id")
+      .in("event_id", ids)
+      .eq("status", "approved"),
+    viewerId
+      ? supabase
+          .from("event_participants")
+          .select("event_id, status")
+          .in("event_id", ids)
+          .eq("player_id", viewerId)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const rosterCount: Record<number, number> = {};
+  for (const p of parts ?? []) rosterCount[(p as any).event_id] = (rosterCount[(p as any).event_id] ?? 0) + 1;
+  const myStatus: Record<number, string> = {};
+  for (const m of mineRes.data ?? []) myStatus[(m as any).event_id] = (m as any).status;
+
+  return events.map((e: any) => ({
+    ...e,
+    roster_count: rosterCount[e.id] ?? 0,
+    my_status: myStatus[e.id] ?? null,
+  }));
 }
 
 // Full detail for one event: meta, standings, roster, and the viewer's status.

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { getRecentBattles } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -86,6 +87,37 @@ export async function submitBattle(formData: FormData) {
   revalidatePath("/");
   if (eventId !== null) revalidatePath(`/event/${eventId}`);
   return { ok: true };
+}
+
+// Withdraw (delete) one of the caller's own reports. RLS enforces the real
+// rule — own battle, less than 15 minutes old — so a stale or foreign id
+// simply deletes nothing.
+export async function withdrawBattle(battleId: number) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+  if (!Number.isInteger(battleId) || battleId <= 0) return { error: "Invalid report." };
+
+  const { data, error } = await supabase
+    .from("battles")
+    .delete()
+    .eq("id", battleId)
+    .eq("player_id", user.id)
+    .select("id, event_id");
+
+  if (error) return { error: `Could not withdraw the report: ${error.message}` };
+  if (!data || data.length === 0)
+    return { error: "That report can no longer be withdrawn (the 15-minute window has passed)." };
+
+  revalidatePath("/");
+  const eventId = data[0].event_id;
+  if (eventId) revalidatePath(`/event/${eventId}`);
+  return { ok: true };
+}
+
+// Next page of the public dispatches feed (battles older than `before`).
+export async function loadMoreDispatches(before: string) {
+  return getRecentBattles(20, before);
 }
 
 export async function signOut() {

@@ -777,3 +777,14 @@ begin
   return 'ok';
 end;
 $$;
+
+-- ================== 0009_battle_withdraw.sql ==================
+
+-- players may withdraw (delete) their own report within 15 minutes;
+-- older history stays immutable, admins keep their moderation powers
+drop policy if exists battles_self_withdraw on public.battles;
+create policy battles_self_withdraw on public.battles
+  for delete using (
+    auth.uid() = player_id
+    and created_at > now() - interval '15 minutes'
+  );

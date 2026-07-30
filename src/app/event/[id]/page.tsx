@@ -1,6 +1,7 @@
-import { getEventDetail, getCurrentProfile } from "@/lib/data";
+import { getEventDetail, getCurrentProfile, getMyRecentBattles } from "@/lib/data";
 import EventActions from "@/components/EventActions";
 import SubmitForm from "@/components/SubmitForm";
+import MyRecentReports from "@/components/MyRecentReports";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -60,6 +61,11 @@ export default async function EventPage({ params }: { params: { id: string } }) 
 
       {/* report a battle straight into this event */}
       {canSubmit && <SubmitForm fixedEvent={{ id: event.id, name: event.name }} />}
+      {canSubmit && (
+        <MyRecentReports
+          reports={(await getMyRecentBattles(profile!.id)).filter((r) => r.event_id === event.id)}
+        />
+      )}
 
       {/* standings */}
       <section className="panel">

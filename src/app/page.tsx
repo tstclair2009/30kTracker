@@ -1,21 +1,15 @@
-import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile, getActiveWarzone, getWarzoneHistory, getSubmittableEvents } from "@/lib/data";
+import { getWarBalance, getRecentBattles, getCurrentProfile, getPlayerProfile, getActiveWarzone, getWarzoneHistory, getSubmittableEvents, getMyRecentBattles, getMyEventMemberships } from "@/lib/data";
 import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
 import EditHandle from "@/components/EditHandle";
 import SpaceBattle from "@/components/SpaceBattle";
 import MiniProfileCard from "@/components/MiniProfileCard";
+import MyRecentReports from "@/components/MyRecentReports";
+import Dispatches from "@/components/Dispatches";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-function timeAgo(ts: string) {
-  const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-  if (s < 60) return "moments ago";
-  if (s < 3600) return Math.floor(s / 60) + "m ago";
-  if (s < 86400) return Math.floor(s / 3600) + "h ago";
-  return Math.floor(s / 86400) + "d ago";
-}
 
 export default async function Home() {
   const [balance, recent, profile, warzone, warzoneHistory] = await Promise.all([
@@ -25,7 +19,11 @@ export default async function Home() {
     getActiveWarzone(),
     getWarzoneHistory(),
   ]);
-  const submittableEvents = await getSubmittableEvents(profile?.id ?? null);
+  const [submittableEvents, myReports, myEvents] = await Promise.all([
+    getSubmittableEvents(profile?.id ?? null),
+    getMyRecentBattles(profile?.id ?? null),
+    getMyEventMemberships(profile?.id ?? null),
+  ]);
 
   // logged-in player's own record for the mini card (null until they've fought)
   const myRecord = profile ? await getPlayerProfile(profile.handle) : null;
@@ -159,7 +157,35 @@ export default async function Home() {
           {myRecord && (
             <MiniProfileCard standing={myRecord.standing} factions={myRecord.factions} />
           )}
+
+          {/* the player's event memberships: shows approval status at a glance */}
+          {myEvents.length > 0 && (
+            <section className="panel">
+              <div className="eyebrow eyebrow-gold" style={{ marginBottom: 10 }}>YOUR EVENTS</div>
+              <div className="data" style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12 }}>
+                {myEvents.map((m) => {
+                  const c =
+                    m.myStatus === "approved" ? "var(--gold-bright)"
+                    : m.myStatus === "requested" ? "var(--bone-dim)"
+                    : "var(--crimson-bright)";
+                  const tag =
+                    m.myStatus === "approved" ? "✓ ON THE ROSTER"
+                    : m.myStatus === "requested" ? "⧗ AWAITING APPROVAL"
+                    : "NOT ACCEPTED";
+                  return (
+                    <Link key={m.eventId} href={`/event/${m.eventId}`}
+                      style={{ border: "1px solid var(--panel-edge-soft)", borderRadius: 2, padding: "8px 12px", textDecoration: "none" }}>
+                      <span style={{ color: "var(--bone)" }}>{m.name}</span>
+                      <span style={{ color: c, fontSize: 10, letterSpacing: "0.14em", marginLeft: 10 }}>{tag}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           <SubmitForm events={submittableEvents.map((e: any) => ({ id: e.id, name: e.name }))} />
+          <MyRecentReports reports={myReports} />
         </>
       ) : (
         <AuthPanel />
@@ -170,21 +196,7 @@ export default async function Home() {
         <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>VOX INTERCEPTS</div>
         <h2 className="section-title">DISPATCHES FROM THE FRONT</h2>
         <div style={{ marginTop: 14 }}>
-        {recent.length === 0 ? (
-          <p className="prose">The vox is silent. No battles have been recorded — be the first to commit a result.</p>
-        ) : (
-          recent.map((b) => (
-            <div key={b.id} className="data" style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderBottom: "1px solid var(--panel-edge-soft)", fontSize: 12 }}>
-              <span className="side-dot" style={{ background: b.side === "loyalist" ? "var(--gold)" : "var(--crimson)" }} />
-              <span style={{ flexGrow: 1, color: "var(--bone)" }}>
-                {b.faction}{b.event ? <span style={{ color: "var(--bone-dim)" }}> · {b.event}</span> : null}
-              </span>
-              <span style={{ color: b.side === "loyalist" ? "var(--gold-bright)" : "var(--crimson-bright)" }}>+{b.score} VP</span>
-              <Link href={`/profile/${b.handle}`} style={{ fontSize: 10, minWidth: 90, textAlign: "right" }}>{b.handle}</Link>
-              <span style={{ color: "var(--neutral)", fontSize: 10, minWidth: 70, textAlign: "right" }}>{timeAgo(b.created_at)}</span>
-            </div>
-          ))
-        )}
+          <Dispatches initial={recent} />
         </div>
         <hr className="divider" />
         <p className="data" style={{ fontSize: 12, display: "flex", gap: 18, flexWrap: "wrap" }}>

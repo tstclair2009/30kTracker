@@ -77,7 +77,9 @@ export default function EventActions({
               {busy ? "…" : "REQUEST TO JOIN"}
             </button>
           ) : (
-            <p className="prose" style={{ margin: 0 }}>Sign in on the war page to request a place.</p>
+            <p className="prose" style={{ margin: 0 }}>
+              <a href="/#enlist" style={{ color: "var(--gold-bright)" }}>Sign in</a> to request a place.
+            </p>
           )}
         </div>
       )}
