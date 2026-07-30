@@ -190,6 +190,7 @@ export default async function Home() {
         <p className="data" style={{ fontSize: 12, display: "flex", gap: 18, flexWrap: "wrap" }}>
           <Link href="/ledger">Search the public ledger →</Link>
           <Link href="/leaderboard">Leaderboard →</Link>
+          <Link href="/events">Events →</Link>
           {profile?.is_admin && <Link href="/admin">⚙ Admin</Link>}
         </p>
       </section>

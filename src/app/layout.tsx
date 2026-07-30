@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TopNav from "@/components/TopNav";
 
 export const metadata: Metadata = {
   title: "The Galactic War",
@@ -16,7 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <TopNav />
+        {children}
+      </body>
     </html>
   );
 }
