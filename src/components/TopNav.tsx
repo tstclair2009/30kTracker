@@ -44,9 +44,13 @@ export default async function TopNav() {
           ADMIN
         </Link>
       )}
-      {profile && (
+      {profile ? (
         <Link href={`/profile/${profile.handle}`} style={{ marginLeft: "auto", color: "var(--gold-bright)" }}>
           {profile.handle.toUpperCase()}
+        </Link>
+      ) : (
+        <Link href="/#enlist" style={{ marginLeft: "auto", color: "var(--gold-bright)" }}>
+          SIGN IN
         </Link>
       )}
     </nav>

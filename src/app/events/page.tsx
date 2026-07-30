@@ -1,10 +1,15 @@
-import { getSeasonEventsPublic } from "@/lib/data";
+import { getSeasonEventsPublic, getCurrentProfile } from "@/lib/data";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+function fmtDate(ts: string) {
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export default async function EventsPage() {
-  const events = await getSeasonEventsPublic();
+  const profile = await getCurrentProfile();
+  const events = await getSeasonEventsPublic(profile?.id ?? null);
 
   return (
     <main className="wrap">
@@ -34,6 +39,20 @@ export default async function EventsPage() {
                     {e.description && (
                       <p className="prose" style={{ marginTop: 6, marginBottom: 0 }}>{e.description}</p>
                     )}
+                    <div className="data" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 8, fontSize: 10, letterSpacing: "0.14em", color: "var(--bone-dim)" }}>
+                      {e.starts_at && (
+                        <span>{fmtDate(e.starts_at)}{e.ends_at ? ` – ${fmtDate(e.ends_at)}` : ""}</span>
+                      )}
+                      {!e.open_participation && (
+                        <span>{e.roster_count} ON THE ROSTER</span>
+                      )}
+                      {e.my_status === "approved" && (
+                        <span style={{ color: "var(--gold-bright)" }}>✓ YOU'RE ON THE ROSTER</span>
+                      )}
+                      {e.my_status === "requested" && (
+                        <span>⧗ YOUR REQUEST IS PENDING</span>
+                      )}
+                    </div>
                   </div>
                   <span className="data" style={{
                     fontSize: 10, letterSpacing: "0.2em", padding: "6px 10px",

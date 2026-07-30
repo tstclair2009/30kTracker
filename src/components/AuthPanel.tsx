@@ -14,6 +14,22 @@ export default function AuthPanel() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ error?: string; ok?: string } | null>(null);
 
+  async function onForgotPassword() {
+    if (!email.trim()) {
+      setMsg({ error: "Enter your email above first, then tap “Forgot password”." });
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${site}/auth/callback?next=/auth/reset`,
+    });
+    setBusy(false);
+    if (error) return setMsg({ error: error.message });
+    setMsg({ ok: "Check your email for a password reset link." });
+  }
+
   async function signInWith(provider: "google" | "facebook") {
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     await supabase.auth.signInWithOAuth({
@@ -53,7 +69,7 @@ export default function AuthPanel() {
   }
 
   return (
-    <section className="panel">
+    <section className="panel" id="enlist">
       <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>IDENTIFICATION REQUIRED</div>
       <h2 className="section-title">
         {mode === "register" ? "ENLIST IN THE WAR" : "RESUME YOUR CAMPAIGN"}
@@ -115,6 +131,21 @@ export default function AuthPanel() {
         <button className="btn" type="submit" disabled={busy} style={{ width: "100%", marginTop: 4 }}>
           {busy ? "…" : mode === "register" ? "ENLIST" : "SIGN IN"}
         </button>
+
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            disabled={busy}
+            style={{
+              marginTop: 10, width: "100%", background: "transparent", border: "none",
+              color: "var(--bone-dim)", fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11, letterSpacing: "0.1em", cursor: "pointer",
+            }}
+          >
+            Forgot password? Email me a reset link →
+          </button>
+        )}
       </form>
 
       <button
