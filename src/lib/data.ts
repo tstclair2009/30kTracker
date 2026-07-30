@@ -274,25 +274,25 @@ export type Warzone = {
   battle_count: number;
 };
 
-// The active warzone (current chapter of the war), with live tallies.
-export async function getActiveWarzone(): Promise<Warzone | null> {
+// All currently active fronts of the war (several may rage at once), with
+// live tallies, in campaign order.
+export async function getActiveWarzones(): Promise<Warzone[]> {
   const supabase = createClient();
   const { data: season } = await supabase
     .from("seasons").select("id").is("ended_at", null).single();
-  if (!season) return null;
+  if (!season) return [];
   const { data } = await supabase
     .from("v_warzone_balance")
     .select("*")
     .eq("season_id", season.id)
     .eq("status", "active")
-    .maybeSingle();
-  if (!data) return null;
-  return {
-    ...data,
-    loyalist_vp: Number(data.loyalist_vp),
-    traitor_vp: Number(data.traitor_vp),
-    battle_count: Number(data.battle_count),
-  } as Warzone;
+    .order("sequence", { ascending: true });
+  return (data ?? []).map((w: any) => ({
+    ...w,
+    loyalist_vp: Number(w.loyalist_vp),
+    traitor_vp: Number(w.traitor_vp),
+    battle_count: Number(w.battle_count),
+  })) as Warzone[];
 }
 
 // All warzones of the open season, campaign order (the war so far).

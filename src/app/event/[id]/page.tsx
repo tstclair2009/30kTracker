@@ -1,4 +1,4 @@
-import { getEventDetail, getCurrentProfile, getMyRecentBattles } from "@/lib/data";
+import { getEventDetail, getCurrentProfile, getMyRecentBattles, getActiveWarzones } from "@/lib/data";
 import EventActions from "@/components/EventActions";
 import SubmitForm from "@/components/SubmitForm";
 import MyRecentReports from "@/components/MyRecentReports";
@@ -60,7 +60,12 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       </section>
 
       {/* report a battle straight into this event */}
-      {canSubmit && <SubmitForm fixedEvent={{ id: event.id, name: event.name }} />}
+      {canSubmit && (
+        <SubmitForm
+          fixedEvent={{ id: event.id, name: event.name }}
+          warzones={(await getActiveWarzones()).map((w) => ({ id: w.warzone_id, name: w.name, sequence: w.sequence }))}
+        />
+      )}
       {canSubmit && (
         <MyRecentReports
           reports={(await getMyRecentBattles(profile!.id)).filter((r) => r.event_id === event.id)}

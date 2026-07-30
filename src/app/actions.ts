@@ -73,10 +73,26 @@ export async function submitBattle(formData: FormData) {
       return { error: "You cannot report into that event — it may be closed, or you are not an approved participant." };
   }
 
-  // every report is tagged with the active warzone (the current chapter),
-  // so monthly narrative tallies accrue automatically
-  const { data: wz } = await supabase.rpc("active_warzone_id");
-  const warzoneId = wz ?? null;
+  // warzone: the player picks which front the battle was fought on. Validate
+  // it's an active front of the open season (RLS re-checks); when the form
+  // sent none, fall back to the single active front if there is one.
+  const wzRaw = String(formData.get("warzone_id") || "").trim();
+  let warzoneId: number | null = wzRaw ? Number(wzRaw) : null;
+  if (warzoneId !== null) {
+    if (!Number.isInteger(warzoneId) || warzoneId <= 0)
+      return { error: "Invalid warzone selection." };
+    const { data: wz } = await supabase
+      .from("warzones")
+      .select("id")
+      .eq("id", warzoneId)
+      .eq("season_id", season.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!wz) return { error: "That warzone is no longer an open front. Refresh and choose again." };
+  } else {
+    const { data: wz } = await supabase.rpc("active_warzone_id");
+    warzoneId = wz ?? null;
+  }
 
   const { error } = await supabase.from("battles").insert({
     player_id: user.id,

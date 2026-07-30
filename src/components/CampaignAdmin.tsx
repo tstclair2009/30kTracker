@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import {
-  advanceWarzone, concludeWarzone, createSpecialEvent, listSeasonEvents, setEventStatus,
+  advanceWarzone, concludeWarzone, openWarzone, concludeWarzoneById,
+  createSpecialEvent, listSeasonEvents, setEventStatus,
 } from "@/app/admin/admin-actions";
 
-export default function CampaignAdmin({ activeWarzoneName }: { activeWarzoneName: string | null }) {
+type ActiveFront = { id: number; name: string; sequence: number };
+
+export default function CampaignAdmin({ activeWarzones }: { activeWarzones: ActiveFront[] }) {
   // — warzone form —
   const [wzName, setWzName] = useState("");
   const [wzNarrative, setWzNarrative] = useState("");
@@ -23,16 +26,27 @@ export default function CampaignAdmin({ activeWarzoneName }: { activeWarzoneName
   const [evErr, setEvErr] = useState("");
   const [events, setEvents] = useState<any[] | null>(null);
 
+  const hasActive = activeWarzones.length > 0;
+
   async function onAdvance() {
     setWzBusy(true); setWzMsg(""); setWzErr("");
     const res = await advanceWarzone(wzName, wzNarrative);
     setWzBusy(false);
     if (res.error) return setWzErr(res.error);
     setWzMsg(
-      activeWarzoneName
-        ? `“${activeWarzoneName}” concluded. The war moves to “${wzName.trim()}”.`
+      hasActive
+        ? `All open fronts concluded. The war moves to “${wzName.trim()}”.`
         : `The war opens at “${wzName.trim()}”.`
     );
+    setWzName(""); setWzNarrative("");
+  }
+
+  async function onOpenFront() {
+    setWzBusy(true); setWzMsg(""); setWzErr("");
+    const res = await openWarzone(wzName, wzNarrative);
+    setWzBusy(false);
+    if (res.error) return setWzErr(res.error);
+    setWzMsg(`A new front opens at “${wzName.trim()}” — the others still rage.`);
     setWzName(""); setWzNarrative("");
   }
 
@@ -41,7 +55,15 @@ export default function CampaignAdmin({ activeWarzoneName }: { activeWarzoneName
     const res = await concludeWarzone();
     setWzBusy(false);
     if (res.error) return setWzErr(res.error);
-    setWzMsg("Active warzone concluded. No new chapter opened.");
+    setWzMsg("All open fronts concluded. No new chapter opened.");
+  }
+
+  async function onConcludeOne(id: number, name: string) {
+    setWzBusy(true); setWzMsg(""); setWzErr("");
+    const res = await concludeWarzoneById(id);
+    setWzBusy(false);
+    if (res.error) return setWzErr(res.error);
+    setWzMsg(`The battle for “${name}” is concluded; its tally is sealed into history.`);
   }
 
   async function onCreateEvent() {
@@ -72,10 +94,25 @@ export default function CampaignAdmin({ activeWarzoneName }: { activeWarzoneName
         <div className="eyebrow eyebrow-gold" style={{ marginBottom: 6 }}>CAMPAIGN CONTROL</div>
         <h2 className="section-title">ADVANCE THE WAR</h2>
         <p className="prose" style={{ marginTop: 8 }}>
-          {activeWarzoneName
-            ? <>The war currently rages at <strong style={{ color: "var(--bone)" }}>{activeWarzoneName}</strong>. Opening the next chapter concludes it, freezes its tallies into history, and moves the war to the next world.</>
+          {hasActive
+            ? <>The war rages on <strong style={{ color: "var(--bone)" }}>{activeWarzones.length}</strong> front{activeWarzones.length === 1 ? "" : "s"}. Players choose which front their battles are fought on. <em>Conclude &amp; advance</em> seals every open front and moves the whole war to the next world; <em>open additional front</em> adds another theater alongside the others.</>
             : <>No warzone is active. Open the first chapter to begin the campaign — every game reported will count toward it.</>}
         </p>
+
+        {hasActive && (
+          <div style={{ marginTop: 14 }}>
+            {activeWarzones.map((wz) => (
+              <div key={wz.id} className="data" style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--panel-edge-soft)", fontSize: 12 }}>
+                <span style={{ color: "var(--bone)", flexGrow: 1 }}>
+                  Chapter {wz.sequence} · {wz.name}
+                </span>
+                <button className="btn-ghost" style={{ fontSize: 9 }} disabled={wzBusy} onClick={() => onConcludeOne(wz.id, wz.name)}>
+                  CONCLUDE THIS FRONT
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ marginTop: 16 }}>
           <label className="label">Next world / system</label>
@@ -95,11 +132,16 @@ export default function CampaignAdmin({ activeWarzoneName }: { activeWarzoneName
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <button className="btn" onClick={onAdvance} disabled={wzBusy || !wzName.trim()} style={{ flex: "1 1 240px" }}>
-            {wzBusy ? "…" : activeWarzoneName ? "CONCLUDE & ADVANCE" : "OPEN FIRST WARZONE"}
+            {wzBusy ? "…" : hasActive ? "CONCLUDE ALL & ADVANCE" : "OPEN FIRST WARZONE"}
           </button>
-          {activeWarzoneName && (
+          {hasActive && (
+            <button className="btn-ghost" onClick={onOpenFront} disabled={wzBusy || !wzName.trim()} style={{ flex: "1 1 200px" }}>
+              OPEN ADDITIONAL FRONT
+            </button>
+          )}
+          {hasActive && (
             <button className="btn-ghost" onClick={onConcludeOnly} disabled={wzBusy}>
-              CONCLUDE ONLY
+              CONCLUDE ALL
             </button>
           )}
         </div>

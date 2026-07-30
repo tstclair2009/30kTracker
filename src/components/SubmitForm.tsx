@@ -9,9 +9,13 @@ const LAST_FACTION_KEY = "gw:lastFaction";
 
 export default function SubmitForm({
   events = [],
+  warzones = [],
   fixedEvent,
 }: {
   events?: { id: number; name: string; enrolled?: boolean }[];
+  // Active fronts of the war — the player declares where the battle was
+  // fought. Defaults to the newest front.
+  warzones?: { id: number; name: string; sequence: number }[];
   // When set, every battle from this form reports into that event: the event
   // is locked (hidden input) instead of offered as a dropdown choice.
   fixedEvent?: { id: number; name: string };
@@ -88,6 +92,28 @@ export default function SubmitForm({
             <input className="input" type="text" name="event" maxLength={80} placeholder="e.g. The Crucible · Reforged" />
           </div>
         </div>
+
+        {warzones.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <label className="label">Warzone (where was this battle fought?)</label>
+            <select
+              className="input"
+              name="warzone_id"
+              defaultValue={warzones[warzones.length - 1].id}
+            >
+              {warzones.map((wz) => (
+                <option key={wz.id} value={wz.id}>
+                  Chapter {wz.sequence} · {wz.name}
+                </option>
+              ))}
+            </select>
+            {warzones.length > 1 && (
+              <p style={{ color: "var(--neutral)", fontSize: 11, marginTop: 6 }}>
+                The war rages on several fronts — your report tips the balance of the one you choose.
+              </p>
+            )}
+          </div>
+        )}
 
         {!fixedEvent && events.length > 0 && (() => {
           const enrolled = events.filter((ev) => ev.enrolled);
