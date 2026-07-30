@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentProfile } from "@/lib/data";
+import { DISCORD_URL } from "@/lib/site";
 
 // Slim top navigation — the app's main menu, on every page.
 export default async function TopNav() {
@@ -39,6 +40,9 @@ export default async function TopNav() {
           {l.label}
         </Link>
       ))}
+      <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--bone-dim)" }}>
+        DISCORD ↗
+      </a>
       {profile?.is_admin && (
         <Link href="/admin" style={{ color: "var(--crimson-bright)" }}>
           ADMIN

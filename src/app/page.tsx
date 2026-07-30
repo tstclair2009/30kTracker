@@ -3,8 +3,9 @@ import AuthPanel from "@/components/AuthPanel";
 import SubmitForm from "@/components/SubmitForm";
 import { signOut } from "@/app/actions";
 import EditHandle from "@/components/EditHandle";
-import SpaceBattle from "@/components/SpaceBattle";
+import LiveWarGauge from "@/components/LiveWarGauge";
 import MiniProfileCard from "@/components/MiniProfileCard";
+import { DISCORD_URL } from "@/lib/site";
 import MyRecentReports from "@/components/MyRecentReports";
 import Dispatches from "@/components/Dispatches";
 import Link from "next/link";
@@ -30,20 +31,9 @@ export default async function Home() {
 
   const loyal = Number(balance.loyalist_vp) || 0;
   const traitor = Number(balance.traitor_vp) || 0;
-  const diff = loyal - traitor;
-  const total = loyal + traitor;
-  // Marker = loyalist share of total VP, eased off the extremes so it never
-  // fully pins to an edge. Tracks intuitively at any score magnitude.
-  // LOYALIST label is on the left, TRAITOR on the right. The marker should move
-  // TOWARD the winning side, so a loyalist lead pulls it left. Position by
-  // traitor share: high traitor share -> marker right, high loyalist share -> left.
-  const traitorShare = total > 0 ? traitor / total : 0.5;
-  const marker = total > 0 ? 6 + traitorShare * 88 : 50; // 6%..94%, centered when empty
 
   return (
     <main className="wrap">
-      <SpaceBattle balance={loyal - traitor} />
-
       {/* ——— title card ——— */}
       <header className="rise" style={{ textAlign: "center", marginBottom: 12, marginTop: 26 }}>
         <div className="eyebrow eyebrow-gold" style={{ marginBottom: 12 }}>
@@ -57,32 +47,8 @@ export default async function Home() {
         </p>
       </header>
 
-      {/* ——— warfront gauge (signature) ——— */}
-      <section className="panel rise-2" style={{ marginTop: 28, padding: "32px 30px 26px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, gap: 12 }}>
-          <div>
-            <div className="eyebrow eyebrow-gold">LOYALIST</div>
-            <div className="war-num" style={{ color: "var(--gold-bright)" }}>{loyal.toLocaleString()}</div>
-          </div>
-          <div className="eyebrow" style={{ paddingBottom: 8 }}>VICTORY POINTS</div>
-          <div style={{ textAlign: "right" }}>
-            <div className="eyebrow eyebrow-crimson">TRAITOR</div>
-            <div className="war-num" style={{ color: "var(--crimson-bright)" }}>{traitor.toLocaleString()}</div>
-          </div>
-        </div>
-
-        <div className="gauge-shell">
-          <div className="gauge-glow-l" style={{ opacity: 0.35 + Math.max(0, 0.5 - traitorShare) * 1.3 }} />
-          <div className="gauge-glow-r" style={{ opacity: 0.35 + Math.max(0, traitorShare - 0.5) * 1.3 }} />
-          <div className="gauge-ticks" />
-          <div className="gauge-center" />
-          <div className="gauge-blade" style={{ left: `calc(${marker}% - 1.5px)` }} />
-        </div>
-
-        <p className="eyebrow" style={{ textAlign: "center", marginTop: 14, letterSpacing: "0.4em" }}>
-          {diff === 0 ? "THE WAR HANGS IN BALANCE" : diff > 0 ? "THE WAR FAVORS THE LOYALISTS" : "THE WAR FAVORS THE TRAITORS"}
-        </p>
-      </section>
+      {/* ——— warfront gauge (signature) — live via Supabase Realtime ——— */}
+      <LiveWarGauge initialLoyal={loyal} initialTraitor={traitor} />
 
       {/* ——— current warzone: the chapter of the war ——— */}
       {warzone && (
@@ -203,6 +169,9 @@ export default async function Home() {
           <Link href="/ledger">Search the public ledger →</Link>
           <Link href="/leaderboard">Leaderboard →</Link>
           <Link href="/events">Events →</Link>
+          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold-bright)" }}>
+            Join the Discord ↗
+          </a>
           {profile?.is_admin && <Link href="/admin">⚙ Admin</Link>}
         </p>
       </section>

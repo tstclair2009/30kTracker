@@ -788,3 +788,34 @@ create policy battles_self_withdraw on public.battles
     auth.uid() = player_id
     and created_at > now() - interval '15 minutes'
   );
+
+-- ================== 0010_realtime_and_submission_caps.sql ==================
+
+-- stream battle reports to connected clients (live war gauge)
+do $$
+begin
+  alter publication supabase_realtime add table public.battles;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
+
+-- daily report cap: at most 10 reports per player per rolling 24 hours
+create or replace function public.battles_in_last_day(uid uuid)
+returns integer
+language sql security definer set search_path = public stable as $$
+  select count(*)::int from public.battles
+  where player_id = uid and created_at > now() - interval '24 hours';
+$$;
+
+drop policy if exists battles_self_insert on public.battles;
+create policy battles_self_insert on public.battles
+  for insert with check (
+    auth.uid() = player_id
+    and season_id = (select id from public.seasons where ended_at is null limit 1)
+    and (
+      event_id is null
+      or public.may_submit_to_event(auth.uid(), event_id)
+    )
+    and public.battles_in_last_day(auth.uid()) < 10
+  );
