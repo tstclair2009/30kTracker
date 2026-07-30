@@ -38,11 +38,13 @@ export async function getWarBalance() {
 }
 
 // Most recent battles (the "dispatches" feed). Paginated — never loads all.
+// Event-linked battles show their event's name; standalone ones keep the
+// free-text occasion.
 export async function getRecentBattles(limit = 20, before?: string) {
   const supabase = createClient();
   let query = supabase
     .from("battles")
-    .select("id, faction, side, score, event, created_at, profiles(handle)")
+    .select("id, faction, side, score, event, created_at, profiles(handle), events(name)")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (before) query = query.lt("created_at", before);
@@ -53,7 +55,7 @@ export async function getRecentBattles(limit = 20, before?: string) {
     faction: b.faction,
     side: b.side,
     score: b.score,
-    event: b.event,
+    event: b.events?.name ?? b.event,
     created_at: b.created_at,
   })) as Battle[];
 }
@@ -211,13 +213,17 @@ export async function getPlayerProfile(handle: string) {
 
   const { data: recent } = await supabase
     .from("battles")
-    .select("id, faction, side, score, event, created_at")
+    .select("id, faction, side, score, event, created_at, events(name)")
     .eq("season_id", season.id)
     .eq("player_id", standing.player_id)
     .order("created_at", { ascending: false })
     .limit(8);
 
-  return { standing, factions: factionsWithSide, recent: recent ?? [] };
+  return {
+    standing,
+    factions: factionsWithSide,
+    recent: (recent ?? []).map((b: any) => ({ ...b, event: b.events?.name ?? b.event })),
+  };
 }
 
 // Search the ledger (handle / event / faction) via the SQL RPC.
@@ -332,7 +338,36 @@ export async function getSubmittableEvents(userId: string | null) {
     .eq("status", "approved");
   const approved = new Set((mine ?? []).map((m: any) => m.event_id));
 
-  return events.filter((e: any) => e.open_participation || approved.has(e.id));
+  return events
+    .filter((e: any) => e.open_participation || approved.has(e.id))
+    .map((e: any) => ({ ...e, enrolled: approved.has(e.id) }));
+}
+
+// The player's own reports filed into events this season, newest first — the
+// "submitted games" view of the events section.
+export async function getMyEventBattles(userId: string | null) {
+  if (!userId) return [];
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).maybeSingle();
+  if (!season) return [];
+  const { data } = await supabase
+    .from("battles")
+    .select("id, faction, side, score, created_at, event_id, events(name)")
+    .eq("player_id", userId)
+    .eq("season_id", season.id)
+    .not("event_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return (data ?? []).map((b: any) => ({
+    id: b.id as number,
+    faction: b.faction as string,
+    side: b.side as "loyalist" | "traitor",
+    score: b.score as number,
+    created_at: b.created_at as string,
+    eventId: b.event_id as number,
+    eventName: (b.events?.name ?? "Unknown event") as string,
+  }));
 }
 
 // The signed-in player's own reports still inside the 15-minute withdraw
