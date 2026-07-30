@@ -334,3 +334,82 @@ export async function getSubmittableEvents(userId: string | null) {
 
   return events.filter((e: any) => e.open_participation || approved.has(e.id));
 }
+
+// ————— Event pages —————
+
+// Public list of this season's events (for /events discovery).
+export async function getSeasonEventsPublic() {
+  const supabase = createClient();
+  const { data: season } = await supabase
+    .from("seasons").select("id").is("ended_at", null).single();
+  if (!season) return [];
+  const { data } = await supabase
+    .from("events")
+    .select("id, name, description, status, is_special, open_participation, rolls_up, created_at")
+    .eq("season_id", season.id)
+    .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+// Full detail for one event: meta, standings, roster, and the viewer's status.
+export async function getEventDetail(id: number, viewerId: string | null) {
+  const supabase = createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("id, name, description, status, is_special, open_participation, rolls_up, organizer_id, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!event) return null;
+
+  const [{ data: standings }, { data: parts }] = await Promise.all([
+    supabase
+      .from("v_event_standings")
+      .select("handle, vp, battles, loyalist_vp, traitor_vp")
+      .eq("event_id", id)
+      .order("vp", { ascending: false }),
+    supabase
+      .from("event_participants")
+      .select("id, player_id, status, requested_at")
+      .eq("event_id", id)
+      .order("requested_at", { ascending: true }),
+  ]);
+
+  // resolve participant handles via the public view
+  const ids = (parts ?? []).map((p: any) => p.player_id);
+  let handleById: Record<string, string> = {};
+  if (ids.length) {
+    const { data: profs } = await supabase
+      .from("v_public_profiles")
+      .select("id, handle")
+      .in("id", ids);
+    for (const pr of profs ?? []) handleById[(pr as any).id] = (pr as any).handle;
+  }
+  // organizer handle
+  const { data: org } = await supabase
+    .from("v_public_profiles")
+    .select("handle")
+    .eq("id", event.organizer_id)
+    .maybeSingle();
+
+  const roster = (parts ?? []).map((p: any) => ({
+    id: p.id,
+    playerId: p.player_id,
+    handle: handleById[p.player_id] ?? "unknown",
+    status: p.status as "requested" | "approved" | "rejected",
+  }));
+
+  const mine = viewerId ? roster.find((r) => r.playerId === viewerId) ?? null : null;
+
+  return {
+    event,
+    organizerHandle: org?.handle ?? "unknown",
+    isOrganizer: viewerId === event.organizer_id,
+    standings: (standings ?? []).map((s: any) => ({
+      handle: s.handle,
+      vp: Number(s.vp),
+      battles: Number(s.battles),
+    })),
+    roster,
+    myStatus: mine?.status ?? null,
+  };
+}
